@@ -18,8 +18,8 @@ nancy <- get_apicarto_cadastre("54395", type = "commune") |>
 # script Loris ----
 bbox_foret <- getbb("Forêt d'Amance, France")
 foret <- opq(bbox = bbox_foret) %>%
-   add_osm_feature(key = "landus", value = "forest") %>%
-   osmdata
+  add_osm_feature(key = "landus", value = "forest") %>%
+  osmdata
 ggplot() + geom_sf(data = foret$osm_polygons, fill = "darkgreen", color = "black")
 
 
@@ -45,7 +45,7 @@ foret_carto <- get_apicarto_cadastre(foret)
 # test 2 ----
 point_foret <- mapedit::drawFeatures()
 communes_foret <- get_wfs(x = point_foret,
-                             layer = "ADMINEXPRESS-COG.LATEST:commune")
+                          layer = "ADMINEXPRESS-COG.LATEST:commune")
 qtm(communes_foret)
 
 communes_insee <- as.list(communes_foret$insee_com)
@@ -55,11 +55,11 @@ foret2 <- get_apicarto_cadastre(c("54100","54012"), type = "parcelle")
 
 # brouillon selection parking ----
 surface_foret2 <- st_as_sf(as.data.frame(surface_foret))
-parking_in_foret <- parking_sf[st_within(parking_sf["geometry"], surface_foret2["geometry"], sparse = FALSE), ]
+parking_foret <- parking_sf[st_within(parking_sf["geometry"], surface_foret2["geometry"], sparse = FALSE), ]
 
 surface_foret2 <- st_transform(st_as_sf(as.data.frame(surface_foret2)), st_crs(parking_sf))
 within_indices <- unlist(st_within(parking_sf, surface_foret2))
-parking_in_foret <- parking_sf[within_indices, ]
+parking_foret <- parking_sf[within_indices, ]
 
 
 # script en cours ----
@@ -84,14 +84,14 @@ query_parking <- opq(bbox = bbox_foret) |>
 osm_parking <- osmdata_sf(query_parking)
 parking_sf <- osm_parking$osm_points  # extraction points parking
 
-parking_in_foret <- st_intersection(parking_sf["geometry"],
-                                    surface_rech_parking["geometry"])  # sélection points parking en forêt et 500m autour
+parking_foret <- st_intersection(parking_sf["geometry"],
+                                 surface_rech_parking["geometry"])  # sélection points parking en forêt et 500m autour
 
-dist_parking <- st_is_within_distance(parking_in_foret,
+dist_parking <- st_is_within_distance(parking_foret,
                                       dist = 100)  # distance 100m entre points
-parking_in_foret$cluster_id <- sapply(seq_along(dist_parking),
-                                      function(i) min(dist_parking[[i]]))  # création colonne pour donner n° de groupe
-groupe_parking <- parking_in_foret %>%
+parking_foret$cluster_id <- sapply(seq_along(dist_parking),
+                                   function(i) min(dist_parking[[i]]))  # création colonne pour donner n° de groupe
+groupe_parking <- parking_foret %>%
   group_by(cluster_id) %>%  # fusionner les points avec mm n° de groupe
   summarise(geometry = st_centroid(st_combine(geometry))) %>%  # créer un unique point centroid pour les nouveaux groupes
   ungroup()
@@ -107,7 +107,7 @@ qtm(surface_foret)
 qtm(perimetre_foret)
 qtm(surface_rech_parking)
 qtm(parking_sf)
-qtm(parking_in_foret)
+qtm(parking_foret)
 qtm(groupe_parking)
 qtm(water_sf)
 
@@ -116,5 +116,6 @@ qtm(water_sf)
 # boundary forest
 # amenity townhall
 # place municipality
+# highway
 # natural wood
 # natural water
