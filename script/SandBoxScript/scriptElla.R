@@ -1,8 +1,6 @@
-#scriptElla
-  
 # https://hackmd.io/@hOaFaD2DS4WcOzNXU6j7vg/HJThOyWvU
 
-librarian::shelf(happign, tmap, sf, dplyr, ggplot2, readxl, openxlsx2, spplot)
+librarian::shelf(happign, osmdata, tmap, sf, dplyr, ggplot2, spplot)
 
 library(tmap);ttm() #switch entre plot et viewer
 
@@ -68,22 +66,52 @@ class(combinaison_buffer)
 
 # Création des 2 points (à récup dans code de Marion) :
 
-point1 <- mapedit::drawFeatures() 
-point2 <- mapedit::drawFeatures()
 
-liste_points <- list(c(point1,point2))
+point_foret <- mapedit::drawFeatures()  # un point
+surface_foret <- get_wfs(x = point_foret,
+                         layer = "BDTOPO_V3:foret_publique")
 
-# Combiner les points en un seul objet sf 
-points_de_Marion <- bind_rows(liste_points)
+bbox_foret <- st_bbox(surface_foret)
+
+
+query_parking <- opq(bbox = bbox_foret) |>
+  add_osm_feature(key = 'amenity', value = c('parking'))
+osm_parking <- osmdata_sf(query_parking)
+parking_sf <- osm_parking$osm_points
 
 buffer.points <- function(sf){
   st_buffer(sf,1000)
 }
 
-testbufferpoint <- buffer.point(points_de_Marion)
+testbufferpoint <- buffer.point(parking_sf)
 
 tm_shape(testbufferpoint)+
   tm_polygons(col = 'blue')
 
+fusion.buffer <- function(sf){
+  fusion <- st_union(sf)  # Fusion des polygones
+  correction <- st_make_valid(fusion)  # Correction des polygones invalides
+}
+
+buffer_ts_parkings <- fusion.buffer(testbufferpoint)
+class(buffer_ts_parkings)
+
+# Visualiser les polygones corrigés
+tm_shape(buffer_ts_parkings) +
+  tm_polygons(col = 'blue')
+
+# Configuration de tmap pour corriger les erreurs de géométrie si nécessaire
+tmap_options(check.and.fix = TRUE)
+
+# Save data ---- 
+
+getwd()
+st_write(buffer_ts_parkings, 
+         "projet1.gpkg",
+         layer = "parkings_buffer")
+
+
 # point 1 et point 2, création fonction
+# Faire un buffer différencié selon l'importance de la route 
+# Buffer différencié selon la proximité du parking
 # Faire un gpkg test pour voir si fusion ou juste superposition
