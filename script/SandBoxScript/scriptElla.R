@@ -1,6 +1,6 @@
 # https://hackmd.io/@hOaFaD2DS4WcOzNXU6j7vg/HJThOyWvU
 
-librarian::shelf(happign, osmdata, tmap, sf, dplyr, ggplot2, spplot)
+librarian::shelf(happign, osmdata, tmap, sf, dplyr, ggplot2, spplot, viridis)
 library(tmap);ttm() #switch entre plot et viewer
 
 # Test fonction ----
@@ -123,9 +123,17 @@ st_write(buffer_ts_parkings,
 # Plus l'importance de la route est proche de 1, plus le buffer est grand
 
 
-library(viridis)
 is_empty_sf <- function(sf) {
   return(nrow(sf) == 0)
+}
+
+buffer.taille.couleur <- function(sf, y, x, color){
+  # y = importance ; x = dist ; color = couleur
+  routes <- subset(sf, sf$importance == y)
+  buffer <- st_buffer(routes, dist = x)
+  if (!is_empty_sf(buffer)) {
+    map <- map + tm_shape(buffer) + tm_polygons(col = 'inferno')
+  }
 }
 
 # faire fonction qui prend sf importance, nvx de buffer et couleur. Puis carte en individuel
@@ -138,46 +146,47 @@ buffer.diff.routes <- function(sf) {
   routes_5 <- subset(sf, importance == 5)
   routes_6 <- subset(sf, importance == 6)
   buffer_1 <- st_buffer(x = routes_1, dist = 1500)
-  buffer_2 <- st_buffer(routes_2,1100)
-  buffer_3 <- st_buffer(routes_3,1000)
-  buffer_4 <- st_buffer(routes_4,800)
-  buffer_5 <- st_buffer(routes_5,500)
-  buffer_6 <- st_buffer(routes_6,250)
+  buffer_2 <- st_buffer(x = routes_2, dist = 1100)
+  buffer_3 <- st_buffer(x = routes_3, dist = 1000)
+  buffer_4 <- st_buffer(x = routes_4, dist = 800)
+  buffer_5 <- st_buffer(x = routes_5, dist = 500)
+  buffer_6 <- st_buffer(x = routes_6, dist = 250)
 
-  
   # Initialisation de la carte
   map <- tm_shape(point_foret_polygone) + 
     tm_borders(col = 'black')
   
   # Ajouter chaque couche si elle n'est pas vide
-  if (!is_empty_sf(routes_1)) {
-    map <- map + tm_shape(routes_1) + tm_polygons(col = 'inferno')
+  if (!is_empty_sf(buffer_1)) {
+    map <- map + tm_shape(buffer_1) + tm_polygons(col = 'inferno')
   }
   
-  if (!is_empty_sf(routes_2)) {
-    map <- map + tm_shape(routes_2) + tm_polygons(col = 'red')
+  if (!is_empty_sf(buffer_2)) {
+    map <- map + tm_shape(buffer_2) + tm_polygons(col = 'red')
   }
   
-  if (!is_empty_sf(routes_3)) {
-    map <- map + tm_shape(routes_3) + tm_polygons(col = 'orange')
+  if (!is_empty_sf(buffer_3)) {
+    map <- map + tm_shape(buffer_3) + tm_polygons(col = 'orange')
   }
   
-  if (!is_empty_sf(routes_4)) {
-    map <- map + tm_shape(routes_4) + tm_polygons(col = 'yellow')
+  if (!is_empty_sf(buffer_4)) {
+    map <- map + tm_shape(buffer_4) + tm_polygons(col = 'yellow')
   }
   
-  if (!is_empty_sf(routes_5)) {
-    map <- map + tm_shape(routes_5) + tm_polygons(col = 'cyan')
+  if (!is_empty_sf(buffer_5)) {
+    map <- map + tm_shape(buffer_5) + tm_polygons(col = 'cyan')
   }
   
-  if (!is_empty_sf(routes_6)) {
-    map <- map + tm_shape(routes_6) + tm_polygons(col = 'green')
+  if (!is_empty_sf(buffer_6)) {
+    map <- map + tm_shape(buffer_6) + tm_polygons(col = 'green')
   }
 
 }
 
 BuffDiff <- buffer.diff.routes(buffer_routes)
-print(BuffDiff)
+tmap_mode("view")  # Passe en mode interactif
+print(BuffDiff) 
+
 
 # palette <- c("red", "blue")
 
