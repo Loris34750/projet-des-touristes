@@ -103,6 +103,10 @@ iso_30 <- osrmIsochrone(groupe_parking["geometry"],
                         res = 20)
 tmap_options(check.and.fix = TRUE)
 
+commune_iso <- get_wfs(x = iso_30,
+                       layer = "LIMITES_ADMINISTRATIVES_EXPRESS.LATEST:commune")
+commune_5000 <- commune_iso[commune_iso$population >= 5000, ]
+
 
 query_water <- opq(bbox = bbox_foret) |>
   add_osm_feature(key = 'natural', value = c('water'))
@@ -117,6 +121,7 @@ qtm(parking_sf)
 qtm(parking_foret)
 qtm(groupe_parking)
 qtm(iso_30)
+qtm(commune_5000)
 qtm(water_sf)
 
 
