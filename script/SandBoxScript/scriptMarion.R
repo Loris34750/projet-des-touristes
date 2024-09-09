@@ -61,39 +61,36 @@ parking_in_foret <- parking_sf[within_indices, ]
 
 # test 3 ----
 
-point_foret <- mapedit::drawFeatures()
+point_foret <- mapedit::drawFeatures()  # sélection point forêt
 surface_foret <- get_wfs(x = point_foret,
-                         layer = "BDTOPO_V3:foret_publique")
+                         layer = "BDTOPO_V3:foret_publique")  # délimitation surface forêt (polygone)
+perimetre_foret <- st_boundary(surface_foret)  # délimitation périmètre forêt (ligne)
 
-bbox_foret <- st_bbox(surface_foret)
+bbox_foret <- st_bbox(surface_foret)  # création bbox pour la suite
 
 
 query_parking <- opq(bbox = bbox_foret) |>
   add_osm_feature(key = 'amenity', value = c('parking'))
 osm_parking <- osmdata_sf(query_parking)
-parking_sf <- osm_parking$osm_points
+parking_sf <- osm_parking$osm_points  # extraction points parking
 
-parking_in_foret <- st_intersection(parking_sf["geometry"], surface_foret["geometry"])
-
+parking_in_foret <- st_intersection(parking_sf["geometry"],
+                                    surface_foret["geometry"])  # sélection points parking en forêt
 
 
 query_water <- opq(bbox = bbox_foret) |>
   add_osm_feature(key = 'natural', value = c('water'))
 osm_water <- osmdata_sf(query_water)
-water_sf <- osm_water$osm_polygons
+water_sf <- osm_water$osm_polygons  # extraction polygones zones en eau
 
-#surface_foret_4326 <- st_transform(surface_foret,
-#                                   4326)
 
 qtm(surface_foret)
+qtm(perimetre_foret)
 qtm(parking_sf)
 qtm(parking_in_foret)
 qtm(water_sf)
 
 tmap_mode("view")
-#tm_shape(parking_sf) +
-#  tm_dots(col = "red", size = 0.1, title = "Parkings") +
-#  tm_basemap("OpenStreetMap")
 
 # amenity parking
 # boundary forest
