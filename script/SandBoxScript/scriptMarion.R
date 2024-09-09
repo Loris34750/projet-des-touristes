@@ -116,6 +116,5 @@ qtm(water_sf)
 # boundary forest
 # amenity townhall
 # place municipality
-# highway
 # natural wood
 # natural water
