@@ -131,9 +131,22 @@ buffer.taille.couleur <- function(sf, y, x, color){
   # y = importance ; x = dist ; color = couleur
   routes <- subset(sf, sf$importance == y)
   buffer <- st_buffer(routes, dist = x)
+  # Initialisation carte
+  map <- tm_shape(point_foret_polygone) + 
+    tm_borders(col = 'black')
   if (!is_empty_sf(buffer)) {
-    map <- map + tm_shape(buffer) + tm_polygons(col = 'inferno')
+    map <- map + tm_shape(buffer) + tm_polygons(col = color)
   }
+}
+
+buffer.diff.routes <- function(sf) {
+  # Création des buffers selon importance
+  buffer.taille.couleur(sf, 1, 1500, 'inferno')
+  buffer.taille.couleur(sf, 2, 1100, 'red')
+  buffer.taille.couleur(sf, 3, 1000, 'orange')
+  buffer.taille.couleur(sf, 4, 800, 'yellow')
+  buffer.taille.couleur(sf, 5, 500, 'cyan')
+  buffer.taille.couleur(sf, 6, 250, 'green')
 }
 
 # faire fonction qui prend sf importance, nvx de buffer et couleur. Puis carte en individuel
@@ -183,9 +196,9 @@ buffer.diff.routes <- function(sf) {
 
 }
 
-BuffDiff <- buffer.diff.routes(buffer_routes)
+BuffDiff1 <- buffer.diff.routes(buffer_routes)
 tmap_mode("view")  # Passe en mode interactif
-print(BuffDiff) 
+print(BuffDiff1) 
 
 
 # palette <- c("red", "blue")
