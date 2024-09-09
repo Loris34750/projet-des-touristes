@@ -120,21 +120,47 @@ st_write(buffer_ts_parkings,
 
 # Plus l'importance de la route est proche de 1, plus le buffer est grand
 
-buffer_sizes <- c(19000, 1000, 850, 700, 500, 25)
+library(viridis)
+buffer.diff.routes <- function(sf) {
+  routes_1 <- subset(sf, importance == 1)
+  routes_2 <- subset(sf, importance == 2)
+  routes_3 <- subset(sf, importance == 3)
+  routes_4 <- subset(sf, importance == 4)
+  routes_5 <- subset(sf, importance == 5)
+  routes_6 <- subset(sf, importance == 6)
+  buffer_1 <- st_buffer(routes_1,1500)
+  buffer_2 <- st_buffer(routes_2,1100)
+  buffer_3 <- st_buffer(routes_3,1000)
+  buffer_4 <- st_buffer(routes_4,800)
+  buffer_5 <- st_buffer(routes_5,500)
+  buffer_6 <- st_buffer(routes_6,250)
+  
+  tm_shape(routes_1)+
+    tm_polygons(col = 'inferno') +
+    tm_shape(routes_2)+ 
+    tm_polygons(col = 'red') +
+    tm_shape(routes_3)+ 
+    tm_polygons(col = 'orange') +
+    tm_shape(routes_4)+ 
+    tm_polygons(col = 'yellow') +    
+    tm_shape(routes_5)+ 
+    tm_polygons(col = 'cyan') +    
+    tm_shape(routes_6)+ 
+    tm_polygons(col = 'green') +
+    tm_shape(point_foret_polygone)+ 
+    tm_borders('black')
+    
+}
 
-buffer_routes <- buffer_routes %>%
-  rowwise() %>%
-  mutate(buffer = st_buffer(geometry, dist = buffer_sizes[importance])) %>%
-  st_as_sf()
+buffer.diff.routes(buffer_routes)
 
-buffer_routes <- buffer_routes %>%
-  rowwise() %>%
-  mutate(buffer = list(st_buffer(geometry, dist = buffer_sizes[importance]))) %>%
-  st_as_sf()
+# palette <- c("red", "blue")
 
-# buffer_routes_union <- st_union(st_union(buffer_routes$buffer))
+# tm_shape(polygons_sf) +
+#  tm_polygons(col = "value", palette = palette, title = "Valeur")
 
-tm_shape(buffer_routes) +
-  tm_polygons(col = "importance", 
-           lwd = 2, 
-           palette = "Dark2")
+# tm_shape(buffer_routes)+  tm_polygons(col = 'red') +
+#  tm_shape(point_foret_polygone)+ 
+  # tm_borders('white')  
+  
+# Buffer différencié selon la proximité du parking
