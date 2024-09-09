@@ -24,13 +24,13 @@ get_apikeys()   # Chercher les données dans IGN
 # Recup des routes passant dans ce polygone
 routes_polygone <- get_wfs(point_foret_polygone,
                   "BDTOPO_V3:troncon_de_route",
-                  spatial_filter = "intersects")
+                  spatial_filter = "intersects") 
 
 buffer_routes <- st_buffer(routes_polygone,15)  # Buffer des lignes routes
 
 # Visualisation des buffers 
 tm_shape(buffer_routes)+
-  tm_polygons(col = 'blue') +
+  tm_polygons(col = 'red') +
   tm_shape(point_foret_polygone)+ 
   tm_borders('white')
 
@@ -79,15 +79,18 @@ query_parking <- opq(bbox = bbox_foret) |>
 osm_parking <- osmdata_sf(query_parking)
 parking_sf <- osm_parking$osm_points
 
+# Fonctions pour mettre buffer autour des parkings ou points d'entrées
 buffer.points <- function(sf){
   st_buffer(sf,1000)
 }
 
-testbufferpoint <- buffer.point(parking_sf)
+testbufferpoint <- buffer.points(parking_sf)
 
+# Visualisation 
 tm_shape(testbufferpoint)+
   tm_polygons(col = 'blue')
 
+# Fusion des polygines buffer
 fusion.buffer <- function(sf){
   fusion <- st_union(sf)  # Fusion des polygones
   correction <- st_make_valid(fusion)  # Correction des polygones invalides
@@ -111,7 +114,27 @@ st_write(buffer_ts_parkings,
          layer = "parkings_buffer")
 
 
-# point 1 et point 2, création fonction
-# Faire un buffer différencié selon l'importance de la route 
-# Buffer différencié selon la proximité du parking
-# Faire un gpkg test pour voir si fusion ou juste superposition
+# Faire un buffer différencié selon l'importance de la route ----
+
+# https://bdtopoexplorer.ign.fr/troncon_de_route#attribute_555
+
+# Plus l'importance de la route est proche de 1, plus le buffer est grand
+
+buffer_sizes <- c(19000, 1000, 850, 700, 500, 25)
+
+buffer_routes <- buffer_routes %>%
+  rowwise() %>%
+  mutate(buffer = st_buffer(geometry, dist = buffer_sizes[importance])) %>%
+  st_as_sf()
+
+buffer_routes <- buffer_routes %>%
+  rowwise() %>%
+  mutate(buffer = list(st_buffer(geometry, dist = buffer_sizes[importance]))) %>%
+  st_as_sf()
+
+# buffer_routes_union <- st_union(st_union(buffer_routes$buffer))
+
+tm_shape(buffer_routes) +
+  tm_polygons(col = "importance", 
+           lwd = 2, 
+           palette = "Dark2")
