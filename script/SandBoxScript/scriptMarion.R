@@ -62,32 +62,38 @@ within_indices <- unlist(st_within(parking_sf, surface_foret2))
 parking_in_foret <- parking_sf[within_indices, ]
 
 
-# test 3 ----
+# script en cours ----
 
 point_foret <- mapedit::drawFeatures()  # sélection point forêt
 surface_foret <- get_wfs(x = point_foret,
                          layer = "BDTOPO_V3:foret_publique")  # délimitation surface forêt (polygone)
 perimetre_foret <- st_boundary(surface_foret)  # délimitation périmètre forêt (ligne)
 
-buffer_perim_foret <- st_buffer(perimetre_foret, 500)  # aller chercher 500m autour de la foret
-surface_rech_parking <- st_union(buffer_perim_foret["geometry"], surface_foret["geometry"])  # faire nouvelle surface de recherche des parking dans la forêt et à 500m autour
+buffer_perim_foret <- st_buffer(perimetre_foret,
+                                500)  # aller chercher 500m autour de la foret
+surface_rech_parking <- st_union(buffer_perim_foret["geometry"],
+                                 surface_foret["geometry"])  # faire nouvelle surface de recherche des parking dans la forêt et à 500m autour
+
 
 bbox_foret <- st_bbox(surface_rech_parking)  # création bbox pour la suite
 
 
 query_parking <- opq(bbox = bbox_foret) |>
-  add_osm_feature(key = 'amenity', value = c('parking'))
+  add_osm_feature(key = 'amenity',
+                  value = c('parking'))
 osm_parking <- osmdata_sf(query_parking)
 parking_sf <- osm_parking$osm_points  # extraction points parking
 
 parking_in_foret <- st_intersection(parking_sf["geometry"],
                                     surface_rech_parking["geometry"])  # sélection points parking en forêt et 500m autour
 
-dist_parking <- st_is_within_distance(parking_in_foret, dist = 100)
-parking_in_foret$cluster_id <- sapply(seq_along(dist_parking), function(i) min(dist_parking[[i]]))
+dist_parking <- st_is_within_distance(parking_in_foret,
+                                      dist = 100)  # distance 100m entre points
+parking_in_foret$cluster_id <- sapply(seq_along(dist_parking),
+                                      function(i) min(dist_parking[[i]]))  # création colonne pour donner n° de groupe
 groupe_parking <- parking_in_foret %>%
-  group_by(cluster_id) %>%
-  summarise(geometry = st_centroid(st_combine(geometry))) %>%
+  group_by(cluster_id) %>%  # fusionner les points avec mm n° de groupe
+  summarise(geometry = st_centroid(st_combine(geometry))) %>%  # créer un unique point centroid pour les nouveaux groupes
   ungroup()
 
 
