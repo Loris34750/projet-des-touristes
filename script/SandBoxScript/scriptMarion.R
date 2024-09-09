@@ -38,6 +38,7 @@ foret <- st_read(chemin_shapefile)
 
 foret_carto <- get_apicarto_cadastre(foret)
 
+
 # test 2 ----
 point_foret <- mapedit::drawFeatures()
 communes_foret <- get_wfs(x = point_foret,
@@ -47,6 +48,16 @@ qtm(communes_foret)
 communes_insee <- as.list(communes_foret$insee_com)
 
 foret2 <- get_apicarto_cadastre(c("54100","54012"), type = "parcelle")
+
+
+# brouillon selection parking ----
+surface_foret2 <- st_as_sf(as.data.frame(surface_foret))
+parking_in_foret <- parking_sf[st_within(parking_sf["geometry"], surface_foret2["geometry"], sparse = FALSE), ]
+
+surface_foret2 <- st_transform(st_as_sf(as.data.frame(surface_foret2)), st_crs(parking_sf))
+within_indices <- unlist(st_within(parking_sf, surface_foret2))
+parking_in_foret <- parking_sf[within_indices, ]
+
 
 # test 3 ----
 
@@ -62,6 +73,10 @@ query_parking <- opq(bbox = bbox_foret) |>
 osm_parking <- osmdata_sf(query_parking)
 parking_sf <- osm_parking$osm_points
 
+parking_in_foret <- st_intersection(parking_sf["geometry"], surface_foret["geometry"])
+
+
+
 query_water <- opq(bbox = bbox_foret) |>
   add_osm_feature(key = 'natural', value = c('water'))
 osm_water <- osmdata_sf(query_water)
@@ -72,6 +87,7 @@ water_sf <- osm_water$osm_polygons
 
 qtm(surface_foret)
 qtm(parking_sf)
+qtm(parking_in_foret)
 qtm(water_sf)
 
 tmap_mode("view")
