@@ -2,7 +2,10 @@ library(osmdata)
 library(happign)
 library(sf)
 library(tmap)
+library(dplyr)
 library(ggplot2)
+
+tmap_mode("view")
 
 
 # Code Paul ----
@@ -66,7 +69,10 @@ surface_foret <- get_wfs(x = point_foret,
                          layer = "BDTOPO_V3:foret_publique")  # délimitation surface forêt (polygone)
 perimetre_foret <- st_boundary(surface_foret)  # délimitation périmètre forêt (ligne)
 
-bbox_foret <- st_bbox(surface_foret)  # création bbox pour la suite
+buffer_perim_foret <- st_buffer(perimetre_foret, 500)  # aller chercher 500m autour de la foret
+surface_rech_parking <- st_union(buffer_perim_foret["geometry"], surface_foret["geometry"])  # faire nouvelle surface de recherche des parking dans la forêt et à 500m autour
+
+bbox_foret <- st_bbox(surface_rech_parking)  # création bbox pour la suite
 
 
 query_parking <- opq(bbox = bbox_foret) |>
@@ -75,7 +81,14 @@ osm_parking <- osmdata_sf(query_parking)
 parking_sf <- osm_parking$osm_points  # extraction points parking
 
 parking_in_foret <- st_intersection(parking_sf["geometry"],
-                                    surface_foret["geometry"])  # sélection points parking en forêt
+                                    surface_rech_parking["geometry"])  # sélection points parking en forêt et 500m autour
+
+dist_parking <- st_is_within_distance(parking_in_foret, dist = 100)
+parking_in_foret$cluster_id <- sapply(seq_along(dist_parking), function(i) min(dist_parking[[i]]))
+groupe_parking <- parking_in_foret %>%
+  group_by(cluster_id) %>%
+  summarise(geometry = st_centroid(st_combine(geometry))) %>%
+  ungroup()
 
 
 query_water <- opq(bbox = bbox_foret) |>
@@ -86,11 +99,12 @@ water_sf <- osm_water$osm_polygons  # extraction polygones zones en eau
 
 qtm(surface_foret)
 qtm(perimetre_foret)
+qtm(surface_rech_parking)
 qtm(parking_sf)
 qtm(parking_in_foret)
+qtm(groupe_parking)
 qtm(water_sf)
 
-tmap_mode("view")
 
 # amenity parking
 # boundary forest
