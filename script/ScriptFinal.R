@@ -12,23 +12,73 @@
 # Dernière mise à jour : 
 
 
-# Installation des packages ----
+# Installation des packages et chargement library ----
 
+# Pour installer et mettre à jour les packages
+install.packages(librarian)
+librarian::shelf(happign, osmdata, sf, dplyr, osrm, spplot, viridis)
+library(tmap);ttm()
 
-# Charger les library ----
-library(happign)
-library(sf)  # manipuler les données vecteurs
-library(tmap)
-library(osmdata)  # manipuler les données d'openstreetmap
-library(osrm)  # manipuler les données d'openstreetmap
-library(dplyr)
+# library(happign) pour les données Web et IGN
+# library(sf) pour manipuler les données vecteurs
+# library(tmap) pour la visualisation des cartes
+# library(osmdata) pour manipuler les données d'openstreetmap
+# library(osrm) pour manipuler les données d'openstreetmap
+# library(dplyr)
 
 
 # Dossier de travail ----
-setwd("")
+setwd("E:/APT/GF/UE2_R_SIG/ProjetR")
 
 
 # Fonctions ----
+
+# Fonction pour création de buffer de x mètres
+buffer.points <- function(sf,x){
+  st_buffer(sf,x)
+}
+
+# Fonction buffer de pression pour les parkings
+pression.buffer <- function(sf){
+  grde_pression <- st_buffer(sf,250)
+  moy_pression <- st_buffer(grde_pression,150)
+  ptit_pression <- st_buffer(moy_pression,50)
+  map <- tm_shape(surface_foret) + 
+    tm_borders(col = 'black')
+  map <- map + tm_shape(ptit_pression) + tm_polygons(col = 'green')
+  map <- map + tm_shape(moy_pression) + tm_polygons(col = 'orange')
+  map <- map + tm_shape(grde_pression) + tm_polygons(col = 'red')
+}
+
+
+# Fonction pour vérifier si sf est vide
+is_empty_sf <- function(sf) {
+  return(nrow(sf) == 0)
+}
+
+# Fonction pour créer un buffer selon l'importance de la route
+buffer.taille.couleur <- function(sf, y, x, color){
+  # y = importance ; x = dist ; color = couleur
+  routes <- subset(sf, sf$importance == y)
+  buffer <- st_buffer(routes, dist = x)
+  # Initialisation carte
+  map <- tm_shape(surface_foret) + 
+    tm_borders(col = 'black')
+  if (!is_empty_sf(buffer)) {
+    map <- map + tm_shape(buffer) + tm_polygons(col = color)
+  }
+}
+
+# Fonction pour créer buffer de taille & couleur différentes selon l'importance
+buffer.diff.routes <- function(sf) {
+  # Création des buffers selon importance
+  buffer.taille.couleur(sf, 1, 1500, 'inferno')
+  buffer.taille.couleur(sf, 2, 1100, 'red')
+  buffer.taille.couleur(sf, 3, 1000, 'orange')
+  buffer.taille.couleur(sf, 4, 800, 'yellow')
+  buffer.taille.couleur(sf, 5, 500, 'cyan')
+  buffer.taille.couleur(sf, 6, 250, 'green')
+}
 
 
 # Partie 1 : Identification de la forêt ----
@@ -86,6 +136,9 @@ groupe_parking <- parking_foret %>%
   summarise(geometry = st_centroid(st_combine(geometry))) %>%
   ungroup()
 
+# buffer de pression du grand public autour des parkings 
+pression_GP_parking <- pression.buffer(groupe_parking)
+print(pression_GP_parking)
 
 # Partie 3 : Identification des villes de plus de 5000 habitants à moins ----
 # de 30 min en voiture des parking de la forêt
