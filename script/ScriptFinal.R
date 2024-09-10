@@ -16,15 +16,17 @@
 
 # Pour installer et mettre à jour les packages
 install.packages(librarian)
-librarian::shelf(happign, osmdata, sf, dplyr, osrm, spplot, viridis)
+librarian::shelf(happign,  # pour les données Web et IGN
+                 osmdata,   # pour manipuler les données d'openstreetmap
+                 osrm,  # pour manipuler les données d'openstreetmap
+                 sf,  # pour manipuler les données vecteurs
+                 tmap,  # pour la visualisation des cartes
+                 dplyr,
+                 spplot,
+                 viridis)  # pour les palettes de couleurs
 library(tmap);ttm()
 
-# library(happign) pour les données Web et IGN
-# library(sf) pour manipuler les données vecteurs
-# library(tmap) pour la visualisation des cartes
-# library(osmdata) pour manipuler les données d'openstreetmap
-# library(osrm) pour manipuler les données d'openstreetmap
-# library(dplyr)
+tmap_mode("view")  # Passe en mode interactif
 
 
 # Dossier de travail ----
@@ -33,17 +35,17 @@ setwd("E:/APT/GF/UE2_R_SIG/ProjetR")
 
 # Fonctions ----
 
-# Fonction pour création de buffer de x mètres et choix couleur buffer
-buffer.points <- function(sf,x, color){
-  buffer <- st_buffer(sf,x)
+# Fonction pour la création d'un buffer de x mètres et choix couleur buffer
+buffer.points <- function(sf, x, color){
+  buffer <- st_buffer(sf, x)
   map <- tm_shape(buffer) + tm_polygons(col = color)
 }
 
-# Fonction buffer de pression pour les parkings
+# Fonction pour le buffer de pression des parkings
 pression.buffer <- function(sf){
-  grde_pression <- st_buffer(sf,250)
-  moy_pression <- st_buffer(grde_pression,150)
-  ptit_pression <- st_buffer(moy_pression,50)
+  grde_pression <- st_buffer(sf, 250)
+  moy_pression <- st_buffer(grde_pression, 150)
+  ptit_pression <- st_buffer(moy_pression, 50)
   map <- tm_shape(surface_foret) + 
     tm_borders(col = 'black')
   map <- map + tm_shape(ptit_pression) + tm_polygons(col = 'green')
@@ -185,5 +187,4 @@ routes_foret <- get_wfs(surface_foret,
                            spatial_filter = "intersects") 
 
 pression_routes <- buffer.diff.routes(routes_foret)
-tmap_mode("view")  # Passe en mode interactif
 print(pression_routes)  # Visualisation de la pression des routes 
