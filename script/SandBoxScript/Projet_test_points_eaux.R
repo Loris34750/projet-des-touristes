@@ -3,6 +3,7 @@ library(happign)
 library(tmap);ttm()
 library(osmdata)
 library(sf)
+library(ggmap)
 
 #on regarde ce qui existe dans la bdd IGN
 get_apikeys()
@@ -21,16 +22,20 @@ bbox_foret <- st_bbox(surface_foret)  # création bbox pour la suite
 
 
 query_point_eau <- opq(bbox = bbox_foret) |>
-  add_osm_feature(key = 'water', 
-                  value = c('river', 'oxbox', 'canal', 'ditch', 'lake',
-                            'reservoir', 'pond', 'stream_pool', 'river', 'stream'))
-
-query_point_eau <- opq(bbox = bbox_foret) |>
-  add_osm_feature(key = 'waterway', 
-                  value = c('watefall', 'stream'))
+  add_osm_feature(key = c('water', 'waterway'),
+                   value = c('river', 'oxbox', 'canal', 'ditch', 'lake',
+                            'reservoir', 'pond', 'stream_pool', 'river',
+                            'stream'))
 
 osm_point_eau <- osmdata_sf(query_point_eau)
-point_eau_sf <- osm_point_eau$osm_lines  # extraction polygones point d'eau
-
+point_eau_sf <- osm_point_eau$osm_lines # extraction polygones point d'eau
 qtm(point_eau_sf)
+
+query_point_eau_1 <- opq(bbox = bbox_foret) |>
+  add_osm_feature(key = 'waterway',
+                  value = c('stream', 'watefall'))
+osm_point_eau_1 <- osmdata_sf(query_point_eau_1)
+point_eau_sf_1 <- osm_point_eau_1$osm_lines
+qtm(point_eau_sf_1)
+
 
