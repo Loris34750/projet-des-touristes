@@ -17,10 +17,20 @@ qtm(perimetre_foret)
 
 #on récupère les points d'eaux avec OSM
 
-bbox_foret <- st_bbox(surface_rech_parking)  # création bbox pour la suite
+bbox_foret <- st_bbox(surface_foret)  # création bbox pour la suite
 
 
-query_parking <- opq(bbox = bbox_foret) |>
-  add_osm_feature(key = 'amenity', value = c('parking'))
-osm_parking <- osmdata_sf(query_parking)
-parking_sf <- osm_parking$osm_points  # extraction points parking
+query_point_eau <- opq(bbox = bbox_foret) |>
+  add_osm_feature(key = 'water', 
+                  value = c('river', 'oxbox', 'canal', 'ditch', 'lake',
+                            'reservoir', 'pond', 'stream_pool', 'river', 'stream'))
+
+query_point_eau <- opq(bbox = bbox_foret) |>
+  add_osm_feature(key = 'waterway', 
+                  value = c('watefall', 'stream'))
+
+osm_point_eau <- osmdata_sf(query_point_eau)
+point_eau_sf <- osm_point_eau$osm_lines  # extraction polygones point d'eau
+
+qtm(point_eau_sf)
+
