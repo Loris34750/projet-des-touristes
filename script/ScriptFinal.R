@@ -52,35 +52,38 @@ pression.buffer <- function(sf){
 }
 
 
-# Fonction pour vérifier si sf est vide
 is_empty_sf <- function(sf) {
   return(nrow(sf) == 0)
 }
 
-# Fonction pour créer un buffer selon l'importance de la route
+# Buffer en fonction de l'importance de la route
 buffer.taille.couleur <- function(sf, y, x, color){
   # y = importance ; x = dist ; color = couleur
   routes <- subset(sf, sf$importance == y)
   buffer <- st_buffer(routes, dist = x)
-  # Initialisation carte
+  
+  if (!is_empty_sf(buffer)) {
+    return(tm_shape(buffer) + tm_polygons(col = color))
+  } 
+}
+
+# Taille et Couleur différentes des buffers
+buffer.diff.routes <- function(sf) {
+  # Initialisation de la carte avec les bordures
   map <- tm_shape(surface_foret) + 
     tm_borders(col = 'black')
-  if (!is_empty_sf(buffer)) {
-    map <- map + tm_shape(buffer) + tm_polygons(col = color)
-  }
+  
+  # Ajouter les buffers de taille et couleur différentes
+  map <- map + buffer.taille.couleur(sf, 1, 150, 'inferno')
+  map <- map + buffer.taille.couleur(sf, 2, 110, 'red')
+  map <- map + buffer.taille.couleur(sf, 3, 100, 'orange')
+  map <- map + buffer.taille.couleur(sf, 4, 80, 'yellow')
+  map <- map + buffer.taille.couleur(sf, 5, 50, 'cyan')
+  map <- map + buffer.taille.couleur(sf, 6, 25, 'green')
+  
+  # Afficher la carte
+  print(map)
 }
-
-# Fonction pour créer buffer de taille & couleur différentes selon l'importance
-buffer.diff.routes <- function(sf) {
-  # Création des buffers selon importance
-  buffer.taille.couleur(sf, 1, 1500, 'inferno')
-  buffer.taille.couleur(sf, 2, 1100, 'red')
-  buffer.taille.couleur(sf, 3, 1000, 'orange')
-  buffer.taille.couleur(sf, 4, 800, 'yellow')
-  buffer.taille.couleur(sf, 5, 500, 'cyan')
-  buffer.taille.couleur(sf, 6, 250, 'green')
-}
-
 
 # Partie 1 : Identification de la forêt ----
 
@@ -141,8 +144,6 @@ groupe_parking <- parking_foret %>%
 pression_GP_parking <- pression.buffer(groupe_parking)
 print(pression_GP_parking)
 
-# fusion des buffers s'ils se touchent
-
 
 # Partie 3 : Identification des villes de plus de 5000 habitants à moins ----
 # de 30 min en voiture des parking de la forêt
@@ -160,7 +161,7 @@ commune_iso <- get_wfs(x = iso_30,
 commune_5000 <- commune_iso[commune_iso$population >= 5000, ]
 
 # pression commune selon nbr d'habitants 
-# buffer en fonction de la population
+# buffer en fonction de la population # BUG !!
 petit_commune <- commune_5000$population <= 7000
 moy_commune <- commune_5000$population <= 10000
 grde_commune <- commune_5000$population > 10000
@@ -176,3 +177,13 @@ pression_commune <- pression_commune + buffer.points(grde_commune,
                                                      color = "red")
 
 print(pression_commune)
+
+# Partie 4 : pression des routes ----
+
+routes_foret <- get_wfs(surface_foret,
+                           "BDTOPO_V3:troncon_de_route",
+                           spatial_filter = "intersects") 
+
+pression_routes <- buffer.diff.routes(routes_foret)
+tmap_mode("view")  # Passe en mode interactif
+print(pression_routes)  # Visualisation de la pression des routes 
