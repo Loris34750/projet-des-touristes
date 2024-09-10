@@ -21,12 +21,11 @@ librarian::shelf(happign,  # pour les données Web et IGN
                  osrm,  # pour manipuler les données d'openstreetmap
                  sf,  # pour manipuler les données vecteurs
                  tmap,  # pour la visualisation des cartes
-                 dplyr,
-                 spplot,
+                 dplyr,  #
+                 spplot,  #
                  viridis)  # pour les palettes de couleurs
-library(tmap);ttm()
 
-tmap_mode("view")  # Passe en mode interactif
+tmap_mode("view")  # passe en mode interactif pour l'affichage des cartes
 
 
 # Dossier de travail ----
@@ -41,7 +40,7 @@ buffer.points <- function(sf, x, color){
   map <- tm_shape(buffer) + tm_polygons(col = color)
 }
 
-# Fonction pour le buffer de pression des parkings
+# Fonction qui crée les buffers de pression qui se cumulent
 pression.buffer <- function(sf){
   grde_pression <- st_buffer(sf, 250)
   moy_pression <- st_buffer(grde_pression, 150)
@@ -51,31 +50,36 @@ pression.buffer <- function(sf){
   map <- map + tm_shape(ptit_pression) + tm_polygons(col = 'green')
   map <- map + tm_shape(moy_pression) + tm_polygons(col = 'orange')
   map <- map + tm_shape(grde_pression) + tm_polygons(col = 'red')
+  return (grde_pression)
+  return (moy_pression)
+  return (ptit_pression)
 }
 
-
+# Fonction pour vérifier que le sf est vide
 is_empty_sf <- function(sf) {
   return(nrow(sf) == 0)
 }
 
-# Buffer en fonction de l'importance de la route
+# Fonction qui crée un buffer en fonction de l'importance de la route
 buffer.taille.couleur <- function(sf, y, x, color){
   # y = importance ; x = dist ; color = couleur
-  routes <- subset(sf, sf$importance == y)
-  buffer <- st_buffer(routes, dist = x)
+  routes <- subset(sf,
+                   sf$importance == y)
+  buffer <- st_buffer(routes,
+                      dist = x)
   
   if (!is_empty_sf(buffer)) {
     return(tm_shape(buffer) + tm_polygons(col = color))
   } 
 }
 
-# Taille et Couleur différentes des buffers
+# Taille et couleur différentes des buffers
 buffer.diff.routes <- function(sf) {
-  # Initialisation de la carte avec les bordures
+  # initialisation de la carte avec les bordures
   map <- tm_shape(surface_foret) + 
     tm_borders(col = 'black')
   
-  # Ajouter les buffers de taille et couleur différentes
+  # ajouter les buffers de taille et couleur différentes
   map <- map + buffer.taille.couleur(sf, 1, 150, 'inferno')
   map <- map + buffer.taille.couleur(sf, 2, 110, 'red')
   map <- map + buffer.taille.couleur(sf, 3, 100, 'orange')
@@ -83,83 +87,90 @@ buffer.diff.routes <- function(sf) {
   map <- map + buffer.taille.couleur(sf, 5, 50, 'cyan')
   map <- map + buffer.taille.couleur(sf, 6, 25, 'green')
   
-  # Afficher la carte
+  # afficher la carte
   print(map)
 }
 
 # Partie 1 : Identification de la forêt ----
 
-# sélection de la forêt par un point
+# Sélection de la forêt par un point
 point_foret <- mapedit::drawFeatures()
 
-# délimitation de la surface de la forêt (polygone)
+# Délimitation de la surface de la forêt (polygone)
 surface_foret <- get_wfs(x = point_foret,
                          layer = "BDTOPO_V3:foret_publique")
 
-# délimitation du périmètre de la forêt (ligne)
+# Délimitation du périmètre de la forêt (ligne)
 perimetre_foret <- st_boundary(surface_foret)
 
 
 # Partie 2 : Identification des points de parking en forêt et à 500m autour ----
 
-# faire une surface de 500m autour du périmètre de la forêt
+# Faire une surface de 500m autour du périmètre de la forêt
 buffer_perim_foret <- st_buffer(perimetre_foret,
                                 500)
 
-# faire nouvelle surface de recherche des parking dans la forêt et à 500m autour
+# Faire nouvelle surface de recherche des parking dans la forêt et à 500m autour
 surface_rech_parking <- st_union(buffer_perim_foret["geometry"],
                                  surface_foret["geometry"])
 
-# création d'une bbox
+# Création d'une bbox
 bbox_foret <- st_bbox(surface_rech_parking)
 
-# recherche des points de parking référencés dans openstreetmap
+# Recherche des points de parking référencés dans openstreetmap
 query_parking <- opq(bbox = bbox_foret) |>
   add_osm_feature(key = 'amenity',
                   value = c('parking'))
 
-# création d'une couche vecteur avec les points de parking
+# Création d'une couche vecteur avec les points de parking
 osm_parking <- osmdata_sf(query_parking)
 parking_sf <- osm_parking$osm_points
 
-# suppression des points au-delà de la zone de recherche (forêt et 500m autour)
+# Suppression des points au-delà de la zone de recherche (forêt et 500m autour)
 parking_foret <- st_intersection(parking_sf["geometry"],
                                  surface_rech_parking["geometry"])
 
-# identification pour chaque point des autres points à moins de 100m
+# Regrouper les points situés à moins de 100m les uns des autres et création
+# d'un unique point centroïde pour les nouveaux groupements
 dist_parking <- st_is_within_distance(parking_foret,
                                       dist = 100)
 
-# création d'un identifiant pour les groupes de points à moins de 100m les un
-# des autres
 parking_foret$cluster_id <- sapply(seq_along(dist_parking),
                                    function(i) min(dist_parking[[i]]))
 
-# fusionner les points avec le même numéro de groupe et créer un unique point
-# centroïde pour les nouveaux groupes
 groupe_parking <- parking_foret %>%
   group_by(cluster_id) %>%
   summarise(geometry = st_centroid(st_combine(geometry))) %>%
   ungroup()
 
-# buffer de pression du grand public autour des parkings 
-pression_GP_parking <- pression.buffer(groupe_parking)
-print(pression_GP_parking)
+# Buffer de pression du grand public autour des parkings 
+pression_gp_parking <- pression.buffer(groupe_parking)
+qtm(pression_gp_parking) #PLUS DE COULEUR !!
 
 
-# Partie 3 : Identification des villes de plus de 5000 habitants à moins ----
+# Partie 3 : Pression sur les chemins aux abords des parking ----
+troncons <- get_wfs( x = surface_foret,
+                     layer = "BDTOPO_V3:troncon_de_route",
+                     spatial_filter = "intersects")
+
+chemins_foret <- troncons[troncons$nature %in% c("Sentier", "Chemin"), ]
+
+pression_chemin <- st_intersection(chemins_foret["geometry"],
+                                   pression_gp_parking["geometry"]) #BUG !
+
+# Partie 4 : Identification des villes de plus de 5000 habitants à moins ----
 # de 30 min en voiture des parking de la forêt
 
-# calcul des isochrones de 30 min en voiture des parking de la forêt
+# Calcul des isochrones de 30 min en voiture des parking de la forêt
 iso_30 <- osrmIsochrone(groupe_parking["geometry"],
                         breaks = 30,
                         res = 20)
 
-# récupération les informations des communes concernées par les isochrones
+# Récupération les informations des communes concernées par les isochrones
 commune_iso <- get_wfs(x = iso_30,
                        layer = "LIMITES_ADMINISTRATIVES_EXPRESS.LATEST:commune")
 
-# sélection des communes de plus de 5000 habitants
+# Sélection des communes de plus de 5000 habitants
 commune_5000 <- commune_iso[commune_iso$population >= 5000, ]
 
 # Pression commune selon nbr d'habitants 
