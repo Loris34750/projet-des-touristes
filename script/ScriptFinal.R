@@ -33,9 +33,10 @@ setwd("E:/APT/GF/UE2_R_SIG/ProjetR")
 
 # Fonctions ----
 
-# Fonction pour création de buffer de x mètres
-buffer.points <- function(sf,x){
-  st_buffer(sf,x)
+# Fonction pour création de buffer de x mètres et choix couleur buffer
+buffer.points <- function(sf,x, color){
+  buffer <- st_buffer(sf,x)
+  map <- tm_shape(buffer) + tm_polygons(col = color)
 }
 
 # Fonction buffer de pression pour les parkings
@@ -140,6 +141,9 @@ groupe_parking <- parking_foret %>%
 pression_GP_parking <- pression.buffer(groupe_parking)
 print(pression_GP_parking)
 
+# fusion des buffers s'ils se touchent
+
+
 # Partie 3 : Identification des villes de plus de 5000 habitants à moins ----
 # de 30 min en voiture des parking de la forêt
 
@@ -154,3 +158,21 @@ commune_iso <- get_wfs(x = iso_30,
 
 # sélection des communes de plus de 5000 habitants
 commune_5000 <- commune_iso[commune_iso$population >= 5000, ]
+
+# pression commune selon nbr d'habitants 
+# buffer en fonction de la population
+petit_commune <- commune_5000$population <= 7000
+moy_commune <- commune_5000$population <= 10000
+grde_commune <- commune_5000$population > 10000
+
+pression_commune <- buffer.points(petit_commune, 
+                                  x = 100, 
+                                  color = "green")
+pression_commune <- pression_commune + buffer.points(moy_commune,
+                                                     x = 500, 
+                                                     color = "yellow")
+pression_commune <- pression_commune + buffer.points(grde_commune,
+                                                     x = 500, 
+                                                     color = "red")
+
+print(pression_commune)
