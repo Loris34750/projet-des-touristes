@@ -21,21 +21,33 @@ qtm(perimetre_foret)
 bbox_foret <- st_bbox(surface_foret)  # création bbox pour la suite
 
 
-query_point_eau <- opq(bbox = bbox_foret) |>
+query_water <- opq(bbox = bbox_foret) |>
   add_osm_feature(key = c('water', 'waterway'),
                    value = c('river', 'oxbox', 'canal', 'ditch', 'lake',
                             'reservoir', 'pond', 'stream_pool', 'river',
                             'stream'))
 
-osm_point_eau <- osmdata_sf(query_point_eau)
-point_eau_sf <- osm_point_eau$osm_lines # extraction polygones point d'eau
-qtm(point_eau_sf)
-
-query_point_eau_1 <- opq(bbox = bbox_foret) |>
+query_waterway <- opq(bbox = bbox_foret) |>
   add_osm_feature(key = 'waterway',
                   value = c('stream', 'watefall'))
-osm_point_eau_1 <- osmdata_sf(query_point_eau_1)
-point_eau_sf_1 <- osm_point_eau_1$osm_lines
-qtm(point_eau_sf_1)
 
+query_natural <- opq(bbox = bbox_foret) |>
+  add_osm_feature(key = 'natural',
+                  value = c('water'))
 
+all_eau <- c(osmdata_sf(query_water), osmdata_sf(query_waterway), osmdata_sf(query_natural))
+
+all_eau_points_sf <- all_eau$osm_points
+all_eau_lignes_sf <- all_eau$osm_lines
+all_eau_polygones_sf <- all_eau$osm_polygons
+
+all_eau_points_foret <- st_intersection(all_eau_points_sf["geometry"],
+                                           surface_foret["geometry"])
+all_eau_lignes_foret <- st_intersection(all_eau_lignes_sf["geometry"],
+                                        surface_foret["geometry"])
+all_eau_polygones_foret <- st_intersection(all_eau_polygones_sf["geometry"],
+                                           surface_foret["geometry"])
+
+qtm(all_eau_points_foret)
+qtm(all_eau_lignes_foret)
+qtm(all_eau_polygones_foret)
