@@ -97,6 +97,10 @@ groupe_parking <- parking_foret %>%
   summarise(geometry = st_centroid(st_combine(geometry))) %>%  # créer un unique point centroid pour les nouveaux groupes
   ungroup()
 
+iso_30 <- osrmIsochrone(groupe_parking["geometry"],
+                       breaks = 30,
+                       res = 20)
+tmap_options(check.and.fix = TRUE)
 
 iso_30 <- osrmIsochrone(groupe_parking["geometry"],
                         breaks = 30,
@@ -114,6 +118,7 @@ osm_water <- osmdata_sf(query_water)
 water_sf <- osm_water$osm_polygons  # extraction polygones zones en eau
 
 
+
 qtm(surface_foret)
 qtm(perimetre_foret)
 qtm(surface_rech_parking)
@@ -123,6 +128,9 @@ qtm(groupe_parking)
 qtm(iso_30)
 qtm(commune_5000)
 qtm(water_sf)
+qtm(buff_20_parking)
+qtm(parking_filtre)
+qtm(iso_30)
 
 
 # amenity parking
