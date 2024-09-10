@@ -184,3 +184,33 @@ routes_foret <- get_wfs(surface_foret,
 pression_routes <- buffer.diff.routes(routes_foret)
 tmap_mode("view")  # Passe en mode interactif
 print(pression_routes)  # Visualisation de la pression des routes 
+
+# Sauvegarde des data ----
+
+getwd()  # Où le gpkg sera enregistré
+# à changer selon les couches qu'on garde 
+st_write(routes, 
+         "ppltmt_data2.gpkg",
+         layer = "routes")
+
+st_write(parca_real_clean, 
+         "ppltmt_data2.gpkg",
+         layer = "parca_real_clean")
+
+st_write(troncon_hydro, 
+         "ppltmt_data2.gpkg",
+         layer = "troncon_hydro")  # ici pas append = true car on rajoute pas des données sur une couche mais une entité bien distincte
+
+writeRaster(MNH,
+            "ppltmt_data2.gpkg",
+            filetype = "GPKG",
+            gdal = c("APPEND_SUBDATASET=YES",
+                     "RASTER_TABLE=MNH"))
+
+writeRaster(IRC,
+            "ppltmt_data2.gpkg",
+            filetype = "GPKG",
+            gdal = c("APPEND_SUBDATASET=YES",
+                     "RASTER_TABLE=IRC"))
+
+getwd()
