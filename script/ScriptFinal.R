@@ -162,11 +162,11 @@ sauvegarde.gpkg <- function(nom_gpkg){
            layer = "routes_imp5")
   
   
-  writeRaster(IRC,
-              nom_gpkg,
-              filetype = "GPKG",
-              gdal = c("APPEND_SUBDATASET=YES",
-                       "RASTER_TABLE=IRC"))
+  #writeRaster(IRC,
+            #  nom_gpkg,
+             # filetype = "GPKG",
+              # gdal = c("APPEND_SUBDATASET=YES",
+              #         "RASTER_TABLE=IRC"))
   
 }
 
