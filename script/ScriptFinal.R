@@ -139,18 +139,39 @@ parking_sf <- osm_parking$osm_points
 parking_foret <- st_intersection(parking_sf["geometry"],
                                  surface_rech_parking["geometry"])
 
-# Regrouper les points situés à moins de 100m les uns des autres et création
+# Regrouper les points situés à moins de 200m les uns des autres et création
 # d'un unique point centroïde pour les nouveaux groupements
-dist_parking <- st_is_within_distance(parking_foret,
-                                      dist = 200)
+dist_parking <- st_is_within_distance(parking_foret, dist = 200)  # Créer les clusters de points proches avec un algorithme de propagation des distances
 
-parking_foret$cluster_id <- sapply(seq_along(dist_parking),
-                                   function(i) min(dist_parking[[i]]))
+clusters <- rep(NA, length(dist_parking))  # Créer un vecteur pour les clusters
 
-groupe_parking <- parking_foret %>%
+cluster_id <- 1  # Fonction pour propager l'identifiant de cluster
+for (i in seq_along(dist_parking)) {
+  if (is.na(clusters[i])) {
+    # Assigner un nouvel identifiant de cluster
+    clusters[i] <- cluster_id
+    # Propager cet identifiant à tous les voisins connectés
+    queue <- dist_parking[[i]]
+    while (length(queue) > 0) {
+      j <- queue[1]
+      queue <- queue[-1]
+      if (is.na(clusters[j])) {
+        clusters[j] <- cluster_id
+        queue <- c(queue, dist_parking[[j]])
+      }
+    }
+    cluster_id <- cluster_id + 1
+  }
+}
+
+parking_foret$cluster_id <- clusters  # Ajouter les clusters au DataFrame
+
+groupe_parking <- parking_foret %>%  # Calculer le centroïde de chaque groupe de points
   group_by(cluster_id) %>%
   summarise(geometry = st_centroid(st_combine(geometry))) %>%
   ungroup()
+
+qtm(groupe_parking)
 
 # Buffer de pression du grand public autour des parkings 
 pression_gp_parking <- pression.buffer(groupe_parking)
