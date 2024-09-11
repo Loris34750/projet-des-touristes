@@ -21,8 +21,7 @@ librarian::shelf(happign,  # pour les données Web et IGN
                  osrm,  # pour manipuler les données d'openstreetmap
                  sf,  # pour manipuler les données vecteurs
                  tmap,  # pour la visualisation des cartes
-                 dplyr,  #
-                 viridis)  # pour les palettes de couleurs
+                 dplyr)  #
 
 tmap_mode("view")  # passe en mode interactif pour l'affichage des cartes
 
@@ -89,12 +88,11 @@ buffer.diff.routes <- function(sf) {
     tm_borders(col = 'black')
   
   # ajouter les buffers de taille et couleur différentes
-  map <- map + buffer.taille.couleur(sf, 1, 150, 'inferno')
-  map <- map + buffer.taille.couleur(sf, 2, 110, 'red')
-  map <- map + buffer.taille.couleur(sf, 3, 100, 'orange')
-  map <- map + buffer.taille.couleur(sf, 4, 80, 'yellow')
-  map <- map + buffer.taille.couleur(sf, 5, 50, 'cyan')
-  map <- map + buffer.taille.couleur(sf, 6, 25, 'green')
+  map <- map + buffer.taille.couleur(sf, 1, 150, 'red')
+  map <- map + buffer.taille.couleur(sf, 2, 100, 'orange')
+  map <- map + buffer.taille.couleur(sf, 3, 80, 'yellow')
+  map <- map + buffer.taille.couleur(sf, 4, 50, 'cyan')
+  map <- map + buffer.taille.couleur(sf, 5, 20, 'green')
   
   # afficher la carte
   print(map)
@@ -177,16 +175,16 @@ qtm(groupe_parking)
 pression_gp_parking <- pression.buffer(groupe_parking)
 
 # Accéder aux buffers de pression des parking
-grde_pression_sf <- pression_gp_parking$grde_pression
-moy_pression_sf <- pression_gp_parking$moy_pression
-ptit_pression_sf <- pression_gp_parking$ptit_pression
+grde_pression_parking_sf <- pression_gp_parking$grde_pression
+moy_pression_parking_sf <- pression_gp_parking$moy_pression
+ptit_pression_parking_sf <- pression_gp_parking$ptit_pression
 
 # Visualisation des buffers parking
 map <- tm_shape(surface_foret) + 
   tm_borders(col = 'black')
-map <- map + tm_shape(ptit_pression_sf) + tm_polygons(col = 'green')
-map <- map + tm_shape(moy_pression_sf) + tm_polygons(col = 'orange')
-map <- map + tm_shape(grde_pression_sf) + tm_polygons(col = 'red')
+map <- map + tm_shape(ptit_pression_parking_sf) + tm_polygons(col = 'green')
+map <- map + tm_shape(moy_pression_parking_sf) + tm_polygons(col = 'orange')
+map <- map + tm_shape(grde_pression_parking_sf) + tm_polygons(col = 'red')
 print(map)
 
 
@@ -204,6 +202,7 @@ chemin_freq <- st_intersection(chemin_foret["geometry"],
 
 # Visualisation des chemins les plus fréquentés
 qtm(chemin_freq)
+
 
 # Partie 4 : Identification des villes de plus de 5000 habitants à moins ----
 # de 30 min en voiture des parking de la forêt
@@ -231,18 +230,15 @@ grde_commune <- commune_5000[commune_5000$population > 10000, ]
 pression_commune <- buffer.points(ptit_commune, x = 0, color = "green") +
   buffer.points(moy_commune, x = 0, color = "yellow") +
   buffer.points(grde_commune, x = 0, color = "red")
-
 print(pression_commune)
 
 
-# Partie 4 : Pression des routes ----
+# Partie 5 : Pression des routes ----
 
 # Faire nouvelle surface de recherche des routes dans la forêt et à 50m autour
 # (pour inclure les routes longeant la forêt sans la pénétrer)
 surface_rech_route <- st_buffer(surface_foret,
                                      50)
-#surface_rech_route <- st_union(buffer_ptit_perim_foret["geometry"],
-#                               surface_foret["geometry"])
 
 # Sélection des routes traversant et longeant la forêt
 routes_foret <- get_wfs(surface_rech_route,
@@ -250,19 +246,23 @@ routes_foret <- get_wfs(surface_rech_route,
                            spatial_filter = "intersects") 
 
 # Création de buffer selon la nature des routes
+# importance 1 = liaison entre métropoles
 route_imp1 <- buffer.route.taille(routes_foret, 1, 150)
+# importance 2 = liaison entre départements
 route_imp2 <- buffer.route.taille(routes_foret, 2, 110)
+# importance 3 = liaison entre communes dans un même département
 route_imp3 <- buffer.route.taille(routes_foret, 3, 100)
+# importance 4 = voies rapides dans commune
 route_imp4 <- buffer.route.taille(routes_foret, 4, 80)
+# importance 5 = routes dans une commune 
 route_imp5 <- buffer.route.taille(routes_foret, 5, 50)
-route_imp6 <- buffer.route.taille(routes_foret, 6, 25)
 
 # Visualisation de la pression des routes
 pression_routes <- buffer.diff.routes(routes_foret)
 print(pression_routes)
 
 
-# Partie 5 : Identification des zones d'intérêt "eau" ----
+# Partie 6 : Identification des zones d'intérêt "eau" ----
 
 # Récupération des données d'openstreetmap
 query_water <- opq(bbox = bbox_foret) |>
@@ -317,27 +317,70 @@ qtm(all_eau_lignes_parking)
 qtm(all_eau_polygones_parking)
 
 
-# Partie 6 : Sauvegarde des données créées dans un géopackage ----
+# Partie 7 : Sauvegarde des données créées dans un géopackage ----
 
 getwd()  # Où le gpkg sera enregistré
 # à changer selon les couches qu'on garde 
-st_write(routes, 
-         "ppltmt_data2.gpkg",
-         layer = "routes")
+st_write(surface_foret, 
+         "impact_freq.gpkg",
+         layer = "surface_foret")
 
-st_write(parca_real_clean, 
-         "ppltmt_data2.gpkg",
-         layer = "parca_real_clean")
+st_write(groupe_parking, 
+         "impact_freq.gpkg",
+         layer = "groupe_parking")
 
-st_write(troncon_hydro, 
-         "ppltmt_data2.gpkg",
-         layer = "troncon_hydro")  # ici pas append = true car on rajoute pas des données sur une couche mais une entité bien distincte
+st_write(grde_pression_parking_sf, 
+         "impact_freq.gpkg",
+         layer = "grde_pression_parking_sf")
 
-writeRaster(MNH,
-            "ppltmt_data2.gpkg",
-            filetype = "GPKG",
-            gdal = c("APPEND_SUBDATASET=YES",
-                     "RASTER_TABLE=MNH"))
+st_write(moy_pression_parking_sf, 
+         "impact_freq.gpkg",
+         layer = "moy_pression_parking_sf")
+
+st_write(ptit_pression_parking_sf, 
+         "impact_freq.gpkg",
+         layer = "ptit_pression_parking_sf")
+
+st_write(chemin_foret, 
+         "impact_freq.gpkg",
+         layer = "chemin_foret")
+
+st_write(chemin_freq, 
+         "impact_freq.gpkg",
+         layer = "chemin_freq")
+
+st_write(iso_30, 
+         "impact_freq.gpkg",
+         layer = "iso_30")
+
+st_write(commune_5000, 
+         "impact_freq.gpkg",
+         layer = "commune_5000")
+
+st_write(routes_foret, 
+         "impact_freq.gpkg",
+         layer = "routes_foret")
+
+st_write(route_imp1, 
+         "impact_freq.gpkg",
+         layer = "routes_imp1")
+
+st_write(route_imp2, 
+         "impact_freq.gpkg",
+         layer = "routes_imp2")
+
+st_write(route_imp3, 
+         "impact_freq.gpkg",
+         layer = "routes_imp3")
+
+st_write(route_imp4, 
+         "impact_freq.gpkg",
+         layer = "routes_imp4")
+
+st_write(route_imp5, 
+         "impact_freq.gpkg",
+         layer = "routes_imp5")
+
 
 writeRaster(IRC,
             "ppltmt_data2.gpkg",
