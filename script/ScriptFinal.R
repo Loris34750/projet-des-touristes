@@ -22,7 +22,6 @@ librarian::shelf(happign,  # pour les données Web et IGN
                  sf,  # pour manipuler les données vecteurs
                  tmap,  # pour la visualisation des cartes
                  dplyr,  #
-                 spplot,  #
                  viridis)  # pour les palettes de couleurs
 
 tmap_mode("view")  # passe en mode interactif pour l'affichage des cartes
@@ -42,10 +41,9 @@ buffer.points <- function(sf, x, color){
 
 # Fonction qui crée les buffers de pression qui se cumulent
 pression.buffer <- function(sf){
-  grde_pression <- st_buffer(sf, 250)
-  moy_pression <- st_buffer(grde_pression, 150)
-  ptit_pression <- st_buffer(moy_pression, 50)
-  # Retourne une liste contenant les objets sf
+  grde_pression <- st_buffer(sf, 500)
+  moy_pression <- st_buffer(grde_pression, 250)
+  ptit_pression <- st_buffer(moy_pression, 250)
   return(list(
     grde_pression = grde_pression,
     moy_pression = moy_pression,
@@ -59,6 +57,19 @@ is_empty_sf <- function(sf) {
 }
 
 # Fonction qui crée un buffer en fonction de l'importance de la route
+buffer.route.taille <- function(sf, y, x){
+  # y = importance ; x = dist
+  routes <- subset(sf,
+                   sf$importance == y)
+  buffer <- st_buffer(routes,
+                      dist = x)
+  
+  if (!is_empty_sf(buffer)) {
+    return(buffer)
+  } 
+}
+
+# Fonction pour visualisation d'un buffer route et attribution d'une couleur
 buffer.taille.couleur <- function(sf, y, x, color){
   # y = importance ; x = dist ; color = couleur
   routes <- subset(sf,
@@ -71,7 +82,7 @@ buffer.taille.couleur <- function(sf, y, x, color){
   } 
 }
 
-# Taille et couleur différentes des buffers
+# Fonction de visulation avec couleur des buffers de routes
 buffer.diff.routes <- function(sf) {
   # initialisation de la carte avec les bordures
   map <- tm_shape(surface_foret) + 
@@ -98,19 +109,19 @@ point_foret <- mapedit::drawFeatures()
 surface_foret <- get_wfs(x = point_foret,
                          layer = "BDTOPO_V3:foret_publique")
 
-# Délimitation du périmètre de la forêt (ligne)
-perimetre_foret <- st_boundary(surface_foret)
+# Délimitation du périmètre de la forêt (ligne) SUPPRIMER
+#perimetre_foret <- st_boundary(surface_foret) SUPPRIMER
 
 
 # Partie 2 : Identification des points de parking en forêt et à 500m autour ----
 
-# Faire une surface de 500m autour du périmètre de la forêt
-buffer_perim_foret <- st_buffer(perimetre_foret,
+# Faire une surface de 500m autour de la surface de la forêt
+surface_rech_parking <- st_buffer(surface_foret,
                                 500)
 
 # Faire nouvelle surface de recherche des parking dans la forêt et à 500m autour
-surface_rech_parking <- st_union(buffer_perim_foret["geometry"],
-                                 surface_foret["geometry"])
+#surface_rech_parking <- st_union(buffer_perim_foret["geometry"], SUPPRIMER
+#                                 surface_foret["geometry"])SUPPRIMER
 
 # Création d'une bbox
 bbox_foret <- st_bbox(surface_rech_parking)
@@ -131,7 +142,7 @@ parking_foret <- st_intersection(parking_sf["geometry"],
 # Regrouper les points situés à moins de 100m les uns des autres et création
 # d'un unique point centroïde pour les nouveaux groupements
 dist_parking <- st_is_within_distance(parking_foret,
-                                      dist = 100)
+                                      dist = 200)
 
 parking_foret$cluster_id <- sapply(seq_along(dist_parking),
                                    function(i) min(dist_parking[[i]]))
@@ -144,12 +155,12 @@ groupe_parking <- parking_foret %>%
 # Buffer de pression du grand public autour des parkings 
 pression_gp_parking <- pression.buffer(groupe_parking)
 
-# Accéder aux buffers pression dans la liste
+# Accéder aux buffers de pression des parking
 grde_pression_sf <- pression_gp_parking$grde_pression
 moy_pression_sf <- pression_gp_parking$moy_pression
 ptit_pression_sf <- pression_gp_parking$ptit_pression
 
-# Visualisation des buffers
+# Visualisation des buffers parking
 map <- tm_shape(surface_foret) + 
   tm_borders(col = 'black')
 map <- map + tm_shape(ptit_pression_sf) + tm_polygons(col = 'green')
@@ -158,20 +169,20 @@ map <- map + tm_shape(grde_pression_sf) + tm_polygons(col = 'red')
 print(map)
 
 
-
-
-qtm(pression_gp_parking) #PLUS DE COULEUR !!
-
-
 # Partie 3 : Pression sur les chemins aux abords des parking ----
 troncons <- get_wfs( x = surface_foret,
                      layer = "BDTOPO_V3:troncon_de_route",
                      spatial_filter = "intersects")
 
-chemins_foret <- troncons[troncons$nature %in% c("Sentier", "Chemin"), ]
+chemin_foret <- troncons[troncons$nature %in% c("Sentier",
+                                                "Chemin",
+                                                "Route empierrée"), ]
 
-pression_chemin <- st_intersection(chemins_foret["geometry"],
-                                   pression_gp_parking["geometry"]) #BUG !
+chemin_freq <- st_intersection(chemin_foret["geometry"],
+                                   pression_gp_parking$ptit_pression["geometry"])
+
+# Visualisation des chemins les plus fréquentés
+qtm(chemin_foret)
 
 # Partie 4 : Identification des villes de plus de 5000 habitants à moins ----
 # de 30 min en voiture des parking de la forêt
@@ -181,38 +192,56 @@ iso_30 <- osrmIsochrone(groupe_parking["geometry"],
                         breaks = 30,
                         res = 20)
 
-# Récupération les informations des communes concernées par les isochrones
+# Récupération des informations des communes dans l'isochrone
 commune_iso <- get_wfs(x = iso_30,
                        layer = "LIMITES_ADMINISTRATIVES_EXPRESS.LATEST:commune")
 
 # Sélection des communes de plus de 5000 habitants
 commune_5000 <- commune_iso[commune_iso$population >= 5000, ]
 
-# Pression commune selon nbr d'habitants 
-# Filtrage des communes en fonction de la population
-petit_commune <- commune_5000[commune_5000$population <= 7000, ]
+# Pression des communes selon le nombre d'habitants 
+# Classification des communes en fonction de la population
+ptit_commune <- commune_5000[commune_5000$population <= 7000, ]
 moy_commune <- commune_5000[commune_5000$population > 7000 & commune_5000$population <= 10000, ]
 grde_commune <- commune_5000[commune_5000$population > 10000, ]
 
-# Création des buffers et ajout à la carte
-pression_commune <- buffer.points(petit_commune, x = 10, color = "green") +
-  buffer.points(moy_commune, x = 50, color = "yellow") +
-  buffer.points(grde_commune, x = 100, color = "red")
+# Visualisation de la classification des communes
+# (Possibilité de former un buffer autour des limites communales)
+pression_commune <- buffer.points(ptit_commune, x = 0, color = "green") +
+  buffer.points(moy_commune, x = 0, color = "yellow") +
+  buffer.points(grde_commune, x = 0, color = "red")
 
-# Affichage de la carte
 print(pression_commune)
 
 
-# Partie 4 : pression des routes ----
+# Partie 4 : Pression des routes ----
 
-routes_foret <- get_wfs(surface_foret,
+# Faire nouvelle surface de recherche des routes dans la forêt et à 50m autour
+# (pour inclure les routes longeant la forêt sans la pénétrer)
+surface_rech_route <- st_buffer(surface_foret,
+                                     50)
+#surface_rech_route <- st_union(buffer_ptit_perim_foret["geometry"],
+#                               surface_foret["geometry"])
+
+# Sélection des routes traversant et longeant la forêt
+routes_foret <- get_wfs(surface_rech_route,
                            "BDTOPO_V3:troncon_de_route",
                            spatial_filter = "intersects") 
 
-pression_routes <- buffer.diff.routes(routes_foret)
-print(pression_routes)  # Visualisation de la pression des routes 
+# Création de buffer selon la nature des routes
+route_imp1 <- buffer.route.taille(routes_foret, 1, 150)
+route_imp2 <- buffer.route.taille(routes_foret, 2, 110)
+route_imp3 <- buffer.route.taille(routes_foret, 3, 100)
+route_imp4 <- buffer.route.taille(routes_foret, 4, 80)
+route_imp5 <- buffer.route.taille(routes_foret, 5, 50)
+route_imp6 <- buffer.route.taille(routes_foret, 6, 25)
 
-# Sauvegarde des data ----
+# Visualisation de la pression des routes
+pression_routes <- buffer.diff.routes(routes_foret)
+print(pression_routes)
+
+
+# Sauvegarde des données créées dans un géopackage ----
 
 getwd()  # Où le gpkg sera enregistré
 # à changer selon les couches qu'on garde 
