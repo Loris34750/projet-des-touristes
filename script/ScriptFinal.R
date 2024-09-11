@@ -45,14 +45,12 @@ pression.buffer <- function(sf){
   grde_pression <- st_buffer(sf, 250)
   moy_pression <- st_buffer(grde_pression, 150)
   ptit_pression <- st_buffer(moy_pression, 50)
-  map <- tm_shape(surface_foret) + 
-    tm_borders(col = 'black')
-  map <- map + tm_shape(ptit_pression) + tm_polygons(col = 'green')
-  map <- map + tm_shape(moy_pression) + tm_polygons(col = 'orange')
-  map <- map + tm_shape(grde_pression) + tm_polygons(col = 'red')
-  return (grde_pression)
-  return (moy_pression)
-  return (ptit_pression)
+  # Retourne une liste contenant les objets sf
+  return(list(
+    grde_pression = grde_pression,
+    moy_pression = moy_pression,
+    ptit_pression = ptit_pression
+  ))
 }
 
 # Fonction pour vérifier que le sf est vide
@@ -145,6 +143,23 @@ groupe_parking <- parking_foret %>%
 
 # Buffer de pression du grand public autour des parkings 
 pression_gp_parking <- pression.buffer(groupe_parking)
+
+# Accéder aux buffers pression dans la liste
+grde_pression_sf <- pression_gp_parking$grde_pression
+moy_pression_sf <- pression_gp_parking$moy_pression
+ptit_pression_sf <- pression_gp_parking$ptit_pression
+
+# Visualisation des buffers
+map <- tm_shape(surface_foret) + 
+  tm_borders(col = 'black')
+map <- map + tm_shape(ptit_pression_sf) + tm_polygons(col = 'green')
+map <- map + tm_shape(moy_pression_sf) + tm_polygons(col = 'orange')
+map <- map + tm_shape(grde_pression_sf) + tm_polygons(col = 'red')
+print(map)
+
+
+
+
 qtm(pression_gp_parking) #PLUS DE COULEUR !!
 
 
