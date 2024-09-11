@@ -110,7 +110,7 @@ qtm(groupe_parking)
 Après avoir récupéré les points des parkings sans doublons, il a été possible d'y appliquer des isochrones pour récupérer toutes les zones autour de la forêt atteignables en moins de 30 minutes en voiture, temps maximum estimé qu'une famille est prête à faire pour une balade en forêt. A partir du  polygone ainsi tracé, il a été possible de récupérer toutes les villes de plus de 5000 habitants à proximité de la forêt. Ensuite une catégorisation des villes a été faite ; plus la ville a une population élevée, plus elle contient de visiteurs potentiels. 
 
 
-```{}
+```{r categorisation villes}
 # Calcul des isochrones de 30 min en voiture des parking de la forêt
 iso_30 <- osrmIsochrone(groupe_parking["geometry"],
                         breaks = 30,
@@ -136,6 +136,92 @@ pression_commune <- buffer.points(ptit_commune, x = 0, color = "green") +
   buffer.points(grde_commune, x = 0, color = "red")
 
 print(pression_commune)
+```
+
+# Identification des infrastructures routières à proximité et à l'intérieur de la forêt
+
+De plus en plus d'infrstructures morcellent la forêt française. Leur utilisation par le grand public attire 
+  Les buffers autour des routes doivent permettre d'adapter les coupes & travaux en forêt pour le gestionnaire forestier. 
+Les buffers font des tailles différentes selon leur importance d'après l'IGN : 
+  - importance 1 : liaison entre métropoles. 
+  - importance 2 : liaison entre départements.
+  - importance 3 : laiison entre communes d'un même département.
+  - importance 4 : liaison à l'intérieur d'une commune permettant de se déplacer rapidement. 
+  - importance 5 : Autres liaisons circulables. 
+
+L'importance 6 a été laissée de côté étant des sentiers non utilisables par des véhicules motorisés. 
+
+
+
+```{r fonctions utilisées}
+buffer.route.taille <- function(sf, y, x){
+  # y = importance ; x = dist
+  routes <- subset(sf,
+                   sf$importance == y)
+  buffer <- st_buffer(routes,
+                      dist = x)
+  
+  if (!is_empty_sf(buffer)) {
+    return(buffer)
+  } 
+}
+buffer.taille.couleur <- function(sf, y, x, color){
+  # y = importance ; x = dist ; color = couleur
+  routes <- subset(sf,
+                   sf$importance == y)
+  buffer <- st_buffer(routes,
+                      dist = x)
+  
+  if (!is_empty_sf(buffer)) {
+    return(tm_shape(buffer) + tm_polygons(col = color))
+  } 
+}
+
+# Fonction de visulation avec couleur des buffers de routes
+buffer.diff.routes <- function(sf) {
+  # initialisation de la carte avec les bordures
+  map <- tm_shape(surface_foret) + 
+    tm_borders(col = 'black')
+  
+  # ajouter les buffers de taille et couleur différentes
+  map <- map + buffer.taille.couleur(sf, 1, 150, 'red')
+  map <- map + buffer.taille.couleur(sf, 2, 100, 'orange')
+  map <- map + buffer.taille.couleur(sf, 3, 80, 'yellow')
+  map <- map + buffer.taille.couleur(sf, 4, 50, 'cyan')
+  map <- map + buffer.taille.couleur(sf, 5, 25, 'green')
+  
+  # afficher la carte
+  print(map)
+}
+```
+
+```{r impact des routes}
+# Partie 4 : Pression des routes ----
+
+# Faire nouvelle surface de recherche des routes dans la forêt et à 50m autour
+# (pour inclure les routes longeant la forêt sans la pénétrer)
+surface_rech_route <- st_buffer(surface_foret,
+                                     50)
+#surface_rech_route <- st_union(buffer_ptit_perim_foret["geometry"],
+#                               surface_foret["geometry"])
+
+# Sélection des routes traversant et longeant la forêt
+routes_foret <- get_wfs(surface_rech_route,
+                           "BDTOPO_V3:troncon_de_route",
+                           spatial_filter = "intersects") 
+
+# Création de buffer selon la nature des routes
+route_imp1 <- buffer.route.taille(routes_foret, 1, 150)
+route_imp2 <- buffer.route.taille(routes_foret, 2, 110)
+route_imp3 <- buffer.route.taille(routes_foret, 3, 100)
+route_imp4 <- buffer.route.taille(routes_foret, 4, 80)
+route_imp5 <- buffer.route.taille(routes_foret, 5, 50)
+route_imp6 <- buffer.route.taille(routes_foret, 6, 25)
+
+# Visualisation de la pression des routes
+pression_routes <- buffer.diff.routes(routes_foret)
+print(pression_routes)
+
 
 ```
 
