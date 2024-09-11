@@ -109,19 +109,12 @@ point_foret <- mapedit::drawFeatures()
 surface_foret <- get_wfs(x = point_foret,
                          layer = "BDTOPO_V3:foret_publique")
 
-# Délimitation du périmètre de la forêt (ligne) SUPPRIMER
-#perimetre_foret <- st_boundary(surface_foret) SUPPRIMER
-
 
 # Partie 2 : Identification des points de parking en forêt et à 500m autour ----
 
 # Faire une surface de 500m autour de la surface de la forêt
 surface_rech_parking <- st_buffer(surface_foret,
                                 500)
-
-# Faire nouvelle surface de recherche des parking dans la forêt et à 500m autour
-#surface_rech_parking <- st_union(buffer_perim_foret["geometry"], SUPPRIMER
-#                                 surface_foret["geometry"])SUPPRIMER
 
 # Création d'une bbox
 bbox_foret <- st_bbox(surface_rech_parking)
@@ -141,32 +134,39 @@ parking_foret <- st_intersection(parking_sf["geometry"],
 
 # Regrouper les points situés à moins de 200m les uns des autres et création
 # d'un unique point centroïde pour les nouveaux groupements
-dist_parking <- st_is_within_distance(parking_foret, dist = 200)  # Créer les clusters de points proches avec un algorithme de propagation des distances
 
-clusters <- rep(NA, length(dist_parking))  # Créer un vecteur pour les clusters
+# Crée pour chaque point de parking une liste de points de parking situés à
+# moins de 200m
+dist_parking <- st_is_within_distance(parking_foret, dist = 200)
 
-cluster_id <- 1  # Fonction pour propager l'identifiant de cluster
-for (i in seq_along(dist_parking)) {
+# Crée un vecteur vide de longueur le nombre de points de parking
+clusters <- rep(NA, length(dist_parking))
+
+# Attribution d'un numéro à chaque groupe de points de parking à moins de 200m
+cluster_id <- 1
+for (i in seq_along(dist_parking)) {  # on parcours la liste des parking
   if (is.na(clusters[i])) {
-    # Assigner un nouvel identifiant de cluster
-    clusters[i] <- cluster_id
-    # Propager cet identifiant à tous les voisins connectés
-    queue <- dist_parking[[i]]
+    clusters[i] <- cluster_id  # si le point n'a pas déjà un n° de cluster on
+    # lui donne le n° actuel
+    queue <- dist_parking[[i]]  # on crée une liste avec les voisins identifiés
+    # à moins de 200m
     while (length(queue) > 0) {
       j <- queue[1]
       queue <- queue[-1]
-      if (is.na(clusters[j])) {
+      if (is.na(clusters[j])) {  # on vérifie que le point n'est pas déjà dans
+        # dans un autre groupe et on l'ajoute au groupe en cours
         clusters[j] <- cluster_id
         queue <- c(queue, dist_parking[[j]])
       }
     }
-    cluster_id <- cluster_id + 1
+    cluster_id <- cluster_id + 1  # on passe ou groupe de points suivant
   }
 }
 
-parking_foret$cluster_id <- clusters  # Ajouter les clusters au DataFrame
+parking_foret$cluster_id <- clusters  # on crée une colonne avec les n° de groupe
 
-groupe_parking <- parking_foret %>%  # Calculer le centroïde de chaque groupe de points
+groupe_parking <- parking_foret %>%  # on calcule le centroïde de chaque groupe
+  # de points avant de les fusionner
   group_by(cluster_id) %>%
   summarise(geometry = st_centroid(st_combine(geometry))) %>%
   ungroup()
@@ -203,7 +203,7 @@ chemin_freq <- st_intersection(chemin_foret["geometry"],
                                    pression_gp_parking$ptit_pression["geometry"])
 
 # Visualisation des chemins les plus fréquentés
-qtm(chemin_foret)
+qtm(chemin_freq)
 
 # Partie 4 : Identification des villes de plus de 5000 habitants à moins ----
 # de 30 min en voiture des parking de la forêt
@@ -262,7 +262,62 @@ pression_routes <- buffer.diff.routes(routes_foret)
 print(pression_routes)
 
 
-# Sauvegarde des données créées dans un géopackage ----
+# Partie 5 : Identification des zones d'intérêt "eau" ----
+
+# Récupération des données d'openstreetmap
+query_water <- opq(bbox = bbox_foret) |>
+  add_osm_feature(key = 'water',
+                  value = c('river',  # rivière
+                            'oxbox',  # méandre
+                            'canal',  # canal
+                            'ditch',  # fossé
+                            'lake',  # lac
+                            'reservoir',  # lac artificiel
+                            'pond',  # petit lac artificiel
+                            'stream_pool'))  # petite gorge
+
+query_waterway <- opq(bbox = bbox_foret) |>
+  add_osm_feature(key = 'waterway',
+                  value = c('stream',  # ruisseau
+                            'watefall'))  # cascade
+
+query_natural <- opq(bbox = bbox_foret) |>
+  add_osm_feature(key = 'natural',
+                  value = c('water'))  # masse d'eau naturelle
+
+# Fusion des éléments eau obtenus avec les  key différentes
+all_eau <- c(osmdata_sf(query_water),
+             osmdata_sf(query_waterway),
+             osmdata_sf(query_natural))
+
+# Création d'une couche vecteur selon la nature des éléments eau
+all_eau_points_sf <- all_eau$osm_points
+all_eau_lignes_sf <- all_eau$osm_lines
+all_eau_polygones_sf <- all_eau$osm_polygons
+
+#Sélection des éléments eau dans la forêt et à 1km autour des parking
+all_eau_points_foret <- st_intersection(all_eau_points_sf["geometry"],
+                                        surface_foret["geometry"])
+all_eau_points_parking <- st_intersection(all_eau_points_foret["geometry"],
+                                        pression_gp_parking$ptit_pression["geometry"])
+
+all_eau_lignes_foret <- st_intersection(all_eau_lignes_sf["geometry"],
+                                        surface_foret["geometry"])
+all_eau_lignes_parking <- st_intersection(all_eau_lignes_foret["geometry"],
+                                          pression_gp_parking$ptit_pression["geometry"])
+
+all_eau_polygones_foret <- st_intersection(all_eau_polygones_sf["geometry"],
+                                           surface_foret["geometry"])
+all_eau_polygones_parking <- st_intersection(all_eau_polygones_foret["geometry"],
+                                          pression_gp_parking$ptit_pression["geometry"])
+
+#Visualisation des différents éléments eau à moins d'1km des parking
+qtm(all_eau_points_parking)
+qtm(all_eau_lignes_parking)
+qtm(all_eau_polygones_parking)
+
+
+# Partie 6 : Sauvegarde des données créées dans un géopackage ----
 
 getwd()  # Où le gpkg sera enregistré
 # à changer selon les couches qu'on garde 
