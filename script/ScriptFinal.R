@@ -129,6 +129,14 @@ sauvegarde.gpkg <- function(nom_gpkg){
            nom_gpkg,
            layer = "chemin_freq")
   
+  st_write(chemin_osm_foret, 
+           nom_gpkg,
+           layer = "chemin_osm_foret")
+  
+  st_write(chemin_osm_freq, 
+           nom_gpkg,
+           layer = "chemin_osm_freq")
+  
   st_write(iso_30, 
            nom_gpkg,
            layer = "iso_30")
@@ -160,6 +168,14 @@ sauvegarde.gpkg <- function(nom_gpkg){
   st_write(route_imp5, 
            nom_gpkg,
            layer = "routes_imp5")
+  
+  st_write(all_eau_lignes_parking, 
+           nom_gpkg,
+           layer = "all_eau_lignes_parking")
+  
+  st_write(all_eau_polygones_parking, 
+           nom_gpkg,
+           layer = "all_eau_polygones_parking")
   
   
   #writeRaster(IRC,
@@ -261,19 +277,41 @@ print(map)
 
 
 # Partie 3 : Pression sur les chemins aux abords des parking ----
-troncons <- get_wfs( x = surface_foret,
-                     layer = "BDTOPO_V3:troncon_de_route",
-                     spatial_filter = "intersects")
+
+#Données pédestre issues d'IGN
+troncons <- get_wfs(x = surface_foret,
+                    layer = "BDTOPO_V3:troncon_de_route",
+                    spatial_filter = "intersects")
 
 chemin_foret <- troncons[troncons$nature %in% c("Sentier",
                                                 "Chemin",
                                                 "Route empierrée"), ]
 
 chemin_freq <- st_intersection(chemin_foret["geometry"],
-                                   pression_gp_parking$ptit_pression["geometry"])
+                               pression_gp_parking$ptit_pression["geometry"])
 
 # Visualisation des chemins les plus fréquentés
 qtm(chemin_freq)
+
+# Comparaison avec les données openstreetmap
+query_chemin_osm <- opq(bbox = bbox_foret) |>
+  add_osm_feature(key = 'highway',
+                  value = c('track',  # route à usage forestier ou agricole
+                            'cycleway',  # voie vélo
+                            'footway',  # sentier pédestre
+                            'bridleway',  # sentier équestre
+                            'path'))  # sentier non spécifique
+
+osm_chemin <- osmdata_sf(query_chemin_osm)
+chemin_osm_sf <- osm_chemin$osm_lines  
+
+chemin_osm_foret <- st_intersection(chemin_osm_sf["geometry"],
+                               surface_foret["geometry"])
+chemin_osm_freq <- st_intersection(chemin_osm_foret["geometry"],
+                               pression_gp_parking$ptit_pression["geometry"]) 
+
+# Visualisation des chemins osm les plus fréquentés
+qtm(chemin_osm_freq)
 
 
 # Partie 4 : Identification des villes de plus de 5000 habitants à moins ----
