@@ -98,6 +98,78 @@ buffer.diff.routes <- function(sf) {
   print(map)
 }
 
+# Fonction permettant l'enregistrement dans un géopackage 
+
+sauvegarde.gpkg <- function(nom_gpkg){
+  st_write(surface_foret, 
+           nom_gpkg,
+           layer = "surface_foret")
+  
+  st_write(groupe_parking, 
+           nom_gpkg,
+           layer = "groupe_parking")
+  
+  st_write(grde_pression_parking_sf, 
+           nom_gpkg,
+           layer = "grde_pression_parking_sf")
+  
+  st_write(moy_pression_parking_sf, 
+           nom_gpkg,
+           layer = "moy_pression_parking_sf")
+  
+  st_write(ptit_pression_parking_sf, 
+           nom_gpkg,
+           layer = "ptit_pression_parking_sf")
+  
+  st_write(chemin_foret, 
+           nom_gpkg,
+           layer = "chemin_foret")
+  
+  st_write(chemin_freq, 
+           nom_gpkg,
+           layer = "chemin_freq")
+  
+  st_write(iso_30, 
+           nom_gpkg,
+           layer = "iso_30")
+  
+  st_write(commune_5000, 
+           nom_gpkg,
+           layer = "commune_5000")
+  
+  st_write(routes_foret, 
+           nom_gpkg,
+           layer = "routes_foret")
+  
+  st_write(route_imp1, 
+           nom_gpkg,
+           layer = "routes_imp1")
+  
+  st_write(route_imp2, 
+           nom_gpkg,
+           layer = "routes_imp2")
+  
+  st_write(route_imp3, 
+           nom_gpkg,
+           layer = "routes_imp3")
+  
+  st_write(route_imp4, 
+           nom_gpkg,
+           layer = "routes_imp4")
+  
+  st_write(route_imp5, 
+           nom_gpkg,
+           layer = "routes_imp5")
+  
+  
+  writeRaster(IRC,
+              nom_gpkg,
+              filetype = "GPKG",
+              gdal = c("APPEND_SUBDATASET=YES",
+                       "RASTER_TABLE=IRC"))
+  
+}
+
 # Partie 1 : Identification de la forêt ----
 
 # Sélection de la forêt par un point
@@ -321,71 +393,6 @@ qtm(all_eau_polygones_parking)
 
 getwd()  # Où le gpkg sera enregistré
 # à changer selon les couches qu'on garde 
-st_write(surface_foret, 
-         "impact_freq.gpkg",
-         layer = "surface_foret")
 
-st_write(groupe_parking, 
-         "impact_freq.gpkg",
-         layer = "groupe_parking")
+dossier_gpkg <- sauvegarde.gpkg("impact_freq.gpkg")
 
-st_write(grde_pression_parking_sf, 
-         "impact_freq.gpkg",
-         layer = "grde_pression_parking_sf")
-
-st_write(moy_pression_parking_sf, 
-         "impact_freq.gpkg",
-         layer = "moy_pression_parking_sf")
-
-st_write(ptit_pression_parking_sf, 
-         "impact_freq.gpkg",
-         layer = "ptit_pression_parking_sf")
-
-st_write(chemin_foret, 
-         "impact_freq.gpkg",
-         layer = "chemin_foret")
-
-st_write(chemin_freq, 
-         "impact_freq.gpkg",
-         layer = "chemin_freq")
-
-st_write(iso_30, 
-         "impact_freq.gpkg",
-         layer = "iso_30")
-
-st_write(commune_5000, 
-         "impact_freq.gpkg",
-         layer = "commune_5000")
-
-st_write(routes_foret, 
-         "impact_freq.gpkg",
-         layer = "routes_foret")
-
-st_write(route_imp1, 
-         "impact_freq.gpkg",
-         layer = "routes_imp1")
-
-st_write(route_imp2, 
-         "impact_freq.gpkg",
-         layer = "routes_imp2")
-
-st_write(route_imp3, 
-         "impact_freq.gpkg",
-         layer = "routes_imp3")
-
-st_write(route_imp4, 
-         "impact_freq.gpkg",
-         layer = "routes_imp4")
-
-st_write(route_imp5, 
-         "impact_freq.gpkg",
-         layer = "routes_imp5")
-
-
-writeRaster(IRC,
-            "ppltmt_data2.gpkg",
-            filetype = "GPKG",
-            gdal = c("APPEND_SUBDATASET=YES",
-                     "RASTER_TABLE=IRC"))
-
-getwd()
