@@ -282,5 +282,56 @@ qtm(chemin_freq)
 
 # visualisation des points d'eau 
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r visualisation point d'eau}
+query_water <- opq(bbox = bbox_foret) |>
+  add_osm_feature(key = 'water',
+                  value = c('river',  # rivière
+                            'oxbox',  # méandre
+                            'canal',  # canal
+                            'ditch',  # fossé
+                            'lake',  # lac
+                            'reservoir',  # lac artificiel
+                            'pond',  # petit lac artificiel
+                            'stream_pool'))  # petite gorge
+
+query_waterway <- opq(bbox = bbox_foret) |>
+  add_osm_feature(key = 'waterway',
+                  value = c('stream',  # ruisseau
+                            'watefall'))  # cascade
+
+query_natural <- opq(bbox = bbox_foret) |>
+  add_osm_feature(key = 'natural',
+                  value = c('water'))  # masse d'eau naturelle
+
+# Fusion des éléments eau obtenus avec les  key différentes
+all_eau <- c(osmdata_sf(query_water),
+             osmdata_sf(query_waterway),
+             osmdata_sf(query_natural))
+
+# Création d'une couche vecteur selon la nature des éléments eau
+all_eau_points_sf <- all_eau$osm_points
+all_eau_lignes_sf <- all_eau$osm_lines
+all_eau_polygones_sf <- all_eau$osm_polygons
+
+#Sélection des éléments eau dans la forêt et à 1km autour des parking
+all_eau_points_foret <- st_intersection(all_eau_points_sf["geometry"],
+                                        surface_foret["geometry"])
+all_eau_points_parking <- st_intersection(all_eau_points_foret["geometry"],
+                                        pression_gp_parking$ptit_pression["geometry"])
+
+all_eau_lignes_foret <- st_intersection(all_eau_lignes_sf["geometry"],
+                                        surface_foret["geometry"])
+all_eau_lignes_parking <- st_intersection(all_eau_lignes_foret["geometry"],
+                                          pression_gp_parking$ptit_pression["geometry"])
+
+all_eau_polygones_foret <- st_intersection(all_eau_polygones_sf["geometry"],
+                                           surface_foret["geometry"])
+all_eau_polygones_parking <- st_intersection(all_eau_polygones_foret["geometry"],
+                                          pression_gp_parking$ptit_pression["geometry"])
+
+#Visualisation des différents éléments eau à moins d'1km des parking
+qtm(all_eau_points_parking)
+qtm(all_eau_lignes_parking)
+qtm(all_eau_polygones_parking)
+```
 
