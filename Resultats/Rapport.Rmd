@@ -11,18 +11,133 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Introduction 
 
+##Contexte : pourquoi ce script
+  Une hausse de la fréquentation des forêts et une sensibilisation accrue des administrés aux enjeux environnementaux implique aujourd'hui, pour le gestionnaire, un changement de gestion. Ce script permet d'adapter les coupes et travaux aux forêts les plus exposées au public, et, à l'échelle de la forêt, d'avoir une gestion différenciée aux abords des routes, parkings et points d'eau. 
+
+##Ce que fait notre script
+ Ce script permet de connaître les parkings à 500 M de la forêt. 
+A partir de ces parkings, des isochrones ont été tracées pour connaître toutes les villes de plus de 5000 habitants situées à 30 minutes en voiture. Les habitants de ces différentes villes ont été sommées, pour évaluer le nombre de visiteurs potentiels. 
+L'impact des routes et des parkings a aussi été pris en compte. 3 zones ont été tracées en fonction de la distance à ces infrastructures. Cela doit permettre au gestionnaire de connaitre les zones les plus exposées au public, mais aussi des connaître les zones du massif où la biodiversité est soumise à des pressions (sonores ou présence de déchets par exemple). 
+Des Buffers ont aussi été tracés autour des points d'eau afin de mettre en avant les zones d'intérêt pour le public, devant ainsi faire l'objet d'un traitement particulier. 
 
 
-```{r cars}
-summary(cars)
+
+``` {r installation et mise à jour des packages }
+install.packages(librarian)
+librarian::shelf(happign,  # pour les données Web et IGN
+                 osmdata,   # pour manipuler les données d'openstreetmap
+                 osrm,  # pour manipuler les données d'openstreetmap
+                 sf,  # pour manipuler les données vecteurs
+                 tmap,  # pour la visualisation des cartes
+                 dplyr,  #
+                 viridis)  # pour les palettes de couleurs
+
+tmap_mode("view")  # passe en mode interactif pour l'affichage des cartes
+
 ```
 
-## Including Plots
+# Choix de la forêt
 
-You can also embed plots, for example:
+  Le gestionnaire public peut choisir la forêt qu'il a à sa charge grâce à mapedit et le périmètre de celle-ci sera généré :
+  
+```{r choix de la forêt}
+point_foret <- mapedit::drawFeatures()
+surface_foret <- get_wfs(x = point_foret,
+                         layer = "BDTOPO_V3:foret_publique")
+```
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+# Villes de plus 5000 habitants à proximité de la forêt
+
+  Afin d'aider le gestionnaire dans le choix des coupes & travaux à effectuer en forêt, il convient de connaître le nombre de visiteurs potentiels, et ainsi la pression de fréquentation qui en découle. Pour cela, nous avons identifié le nombre d'habitant des communes  alentour. Nous avons ainsi identifié les parkings à 500 M de la forêt grâce à des buffers puis les villes à moins de 30 minutes en voiture, grâce à des isochrones. Le nombre d'habitant provient de données IGN (la carte "LIMITES_ADMINISTRATIVES_EXPRESS.LATEST:commune"). 
+Le choix a été fait de garder seulement les villes de plus de 5000 habitants. 
+
+```{r surface de 500m autour de la surface de la forêt}
+surface_rech_parking <- st_buffer(surface_foret,
+                                500)
+bbox_foret <- st_bbox(surface_rech_parking)
+query_parking <- opq(bbox = bbox_foret) |>
+  add_osm_feature(key = 'amenity',
+                  value = c('parking'))
+
+# Création d'une couche vecteur avec les points de parking
+osm_parking <- osmdata_sf(query_parking)
+parking_sf <- osm_parking$osm_points
+
+# Suppression des points au-delà de la zone de recherche (forêt et 500m autour)
+parking_foret <- st_intersection(parking_sf["geometry"],
+                                 surface_rech_parking["geometry"])
+
+
+```
+
+  Les points de parking ont été récupérés sur OpenStreetMap (OSM). Les points de parking ont été récupérés dans la forêt, et autour sur une distance de 500m. En effet, il a été considéré que les visiteurs peuvent laisser leurs véhicules au maximum à cette distance. Néanmoins, le fichier OSM contenait souvent plusieurs points pour un même parking. Il a donc été nécessaire de les regrouper en utilisant la méthode du clustering. 
+
+```{r regroupement des points des parkings}
+# Regrouper les points situés à moins de 200m les uns des autres et création
+# d'un unique point centroïde pour les nouveaux groupements
+dist_parking <- st_is_within_distance(parking_foret, dist = 200)  # Créer les clusters de points proches avec un algorithme de propagation des distances
+clusters <- rep(NA, length(dist_parking))  # Créer un vecteur pour les clusters
+
+cluster_id <- 1  # Fonction pour propager l'identifiant de cluster
+for (i in seq_along(dist_parking)) {
+  if (is.na(clusters[i])) {
+    # Assigner un nouvel identifiant de cluster
+    clusters[i] <- cluster_id
+    # Propager cet identifiant à tous les voisins connectés
+    queue <- dist_parking[[i]]
+    while (length(queue) > 0) {
+      j <- queue[1]
+      queue <- queue[-1]
+      if (is.na(clusters[j])) {
+        clusters[j] <- cluster_id
+        queue <- c(queue, dist_parking[[j]])
+      }
+    }
+    cluster_id <- cluster_id + 1
+  }
+}
+
+parking_foret$cluster_id <- clusters  # Ajouter les clusters au DataFrame
+
+groupe_parking <- parking_foret %>%  # Calculer le centroïde de chaque groupe de points
+  group_by(cluster_id) %>%
+  summarise(geometry = st_centroid(st_combine(geometry))) %>%
+  ungroup()
+
+qtm(groupe_parking)
+```
+
+Après avoir récupéré les points des parkings sans doublons, il a été possible d'y appliquer des isochrones pour récupérer toutes les zones autour de la forêt atteignables en moins de 30 minutes en voiture, temps maximum estimé qu'une famille est prête à faire pour une balade en forêt. A partir du  polygone ainsi tracé, il a été possible de récupérer toutes les villes de plus de 5000 habitants à proximité de la forêt. Ensuite une catégorisation des villes a été faite ; plus la ville a une population élevée, plus elle contient de visiteurs potentiels. 
+
+
+```{}
+# Calcul des isochrones de 30 min en voiture des parking de la forêt
+iso_30 <- osrmIsochrone(groupe_parking["geometry"],
+                        breaks = 30,
+                        res = 20)
+
+# Récupération des informations des communes dans l'isochrone
+commune_iso <- get_wfs(x = iso_30,
+                       layer = "LIMITES_ADMINISTRATIVES_EXPRESS.LATEST:commune")
+
+# Sélection des communes de plus de 5000 habitants
+commune_5000 <- commune_iso[commune_iso$population >= 5000, ]
+
+# Pression des communes selon le nombre d'habitants 
+# Classification des communes en fonction de la population
+ptit_commune <- commune_5000[commune_5000$population <= 7000, ]
+moy_commune <- commune_5000[commune_5000$population > 7000 & commune_5000$population <= 10000, ]
+grde_commune <- commune_5000[commune_5000$population > 10000, ]
+
+# Visualisation de la classification des communes
+# (Possibilité de former un buffer autour des limites communales)
+pression_commune <- buffer.points(ptit_commune, x = 0, color = "green") +
+  buffer.points(moy_commune, x = 0, color = "yellow") +
+  buffer.points(grde_commune, x = 0, color = "red")
+
+print(pression_commune)
+
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
