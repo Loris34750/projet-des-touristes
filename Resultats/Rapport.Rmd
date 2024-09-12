@@ -282,6 +282,8 @@ qtm(chemin_freq)
 
 # visualisation des points d'eau 
 
+  Dans la même logique que pour les sentiers que l'on retrouve en forêt, les points d'eau comme les rivières, les fossés ou encore les lacs ont été relevés afin de permettre au gestionnaire d'identifier les zones éventuelles de passage de visiteurs. En effet, il a été considéré que la population se plaisait à marcher autour de ces espaces spécifiques pour apprécier son côté paisible. Ces zones délimitées pourront permettre aux forestiers de réfléchir à l'installation de sentiers plus ou moins larges pour accueillir le public ou non.  
+  
 ```{r visualisation point d'eau}
 query_water <- opq(bbox = bbox_foret) |>
   add_osm_feature(key = 'water',
