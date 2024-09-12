@@ -17,19 +17,23 @@ Partie 1 : Choix de la forêt par le gestionnaire.
 
 Partie 2 : Identification des villes de plus de 5000 habitants à proximité de la forêt, et classification de ces villes. 
 
-
+[Contribution guidelines for this project](Resultats/Cartes/Carte_communes_periph.png)
 
 Partie 3 : Identification des infrastructures à proximité et à l'intérieur de la forêt. 
 
-
+[Contribution guidelines for this project](Resultats/Cartes/Carte_infrastructures_routes.png)
 
 Partie 4 : Pression du grand public autour des parkings, grâce à des buffers. 
 
-
+[Contribution guidelines for this project](Resultats/Cartes/Carte_pression_parking.png)
 
 Partie 5 et 6 : Visualisation des sentiers et des points d'eau dans la forêt. 
 
+Données de l'IGN:
+[Contribution guidelines for this project](Resultats/Cartes/Carte_des_chemins_points_eau.png)
 
+Comparaison avec les données disponibles sur OpenStreetMap.
+[Contribution guidelines for this project](Resultats/Cartes/Carte_des_chemins_points_eau_OSM.png)
 
 Partie 7 : Génération d'un fichier .gpkg pour obtenir une carte sur Qgis. 
 
