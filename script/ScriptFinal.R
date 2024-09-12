@@ -431,3 +431,4 @@ getwd()
 
 dossier_gpkg <- sauvegarde.gpkg("impact_freq.gpkg")
 
+ 
