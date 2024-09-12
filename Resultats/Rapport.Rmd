@@ -3,20 +3,22 @@ title: "Projet R"
 author: "Tifaine CATTANEO, Loris GONZALEZ, Ella Pidoux, Marion VERGNOL"
 date: "2024-09-10"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
-```{r setup, include=FALSE, warning =FALSE}
+```{r setup, include=FALSE, warning = TRUE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Introduction 
 
-##Contexte : pourquoi ce script
+## Contexte : pourquoi ce script
+
   Une hausse de la fréquentation des forêts et une sensibilisation accrue des administrés aux enjeux environnementaux implique aujourd'hui, pour le gestionnaire, un changement de gestion. Ce script permet d'adapter les coupes et travaux aux forêts les plus exposées au public, et, à l'échelle de la forêt, d'avoir une gestion différenciée aux abords des routes, parkings et points d'eau. 
 
-##Ce que fait notre script
+## Ce que fait notre script
+
  Ce script permet de connaître les parkings dans la forêt et à 500 m autour. 
 A partir de ces parkings, des isochrones ont été tracées pour connaître toutes les villes de plus de 5000 habitants situées à 30 minutes en voiture. Les habitants de ces différentes villes ont été sommées, pour évaluer le nombre de visiteurs potentiels. 
 L'impact des routes et des parkings a aussi été pris en compte. Trois zones ont été tracées en fonction de la distance à ces infrastructures. Cela permet au gestionnaire de connaitre les zones les plus exposées au public, mais aussi des connaître les zones du massif où la biodiversité est soumise à des pressions (sonores ou présence de déchets par exemple). 
@@ -24,8 +26,8 @@ Des Buffers ont aussi été tracés autour des points d'eau afin de mettre en av
 
 
 
-``` {r installation et mise à jour des packages }
-install.packages(librarian)
+``` {r installation et mise a jour des packages }
+# install.packages(librarian) #si pas déjà installé
 librarian::shelf(happign,  # pour les données Web et IGN
                  osmdata,   # pour manipuler les données d'openstreetmap
                  osrm,  # pour manipuler les données d'openstreetmap
@@ -247,6 +249,10 @@ route_imp5 <- buffer.route.taille(routes_foret, 5, 50)
 
 # Visualisation de la pression des routes
 pression_routes <- buffer.diff.routes(routes_foret)
+
+# Message d'avis possible : st_as_s2(): dropping Z and/or M coordinate
+# A ne pas prendre en compte car la coodinate z n'existe pas dans notre étude
+
 print(pression_routes)
 ```
 
@@ -290,7 +296,7 @@ print(map)
   Pour pouvoir gérer l'affluence en forêt et identifier les zones exposées au public, le tracé des sentiers a été récupéré à partir de la "BDTOPO_V3:troncon_de_route". Cela permet là encore au gestionnaire d'identifier les zones exposées à la vue du public, et d'adapter les coupes et travaux en conséquence.
   Les données des sentiers ont également été extraites d'openstreetmap afin de comparer avec les sentiers référencés par l'IGN et utilisés précédement.
 
-```{r fréquentation des chemins}
+```{r frequentation des chemins}
 # Données pédestres issues de l'IGN
 troncons <- get_wfs(x = surface_foret,
                     layer = "BDTOPO_V3:troncon_de_route",
@@ -299,6 +305,9 @@ troncons <- get_wfs(x = surface_foret,
 chemin_foret <- troncons[troncons$nature %in% c("Sentier",
                                                 "Chemin",
                                                 "Route empierrée"), ]
+
+# Message d'avis possible : st_as_s2(): dropping Z and/or M coordinate
+# A ne pas prendre en compte car la coodinate z n'existe pas dans notre étude
 
 chemin_freq <- st_intersection(chemin_foret["geometry"],
                                pression_gp_parking$ptit_pression["geometry"])
@@ -333,7 +342,7 @@ qtm(chemin_osm_freq)
   Dans la même logique que pour les sentiers que l'on trouve en forêt, les points d'eau comme les rivières et les lacs ont été relevés afin de permettre au gestionnaire d'identifier les zones éventuelles de passage de visiteurs. En effet, il a été considéré que la population se plaisait à marcher autour de ces espaces spécifiques pour apprécier son côté paisible. Ces zones délimitées pourront permettre aux forestiers de réfléchir à l'installation de sentiers plus ou moins larges pour accueillir le public ou non.
   Les données des éléments hydrologiques ont également été extraits de l'IGN afin de les comparer avec les données d'openstreetmap.
   
-```{r visualisation point d'eau}
+```{r visualisation point eau}
 # Récupération des données d'openstreetmap
 query_water <- opq(bbox = bbox_foret) |>
   add_osm_feature(key = 'water',
@@ -383,9 +392,15 @@ all_eau_polygones_parking <- st_intersection(all_eau_polygones_foret["geometry"]
 
 # Visualisation des différents éléments "eau" à moins d'1km des parking
 # Message d'erreur peut apparaître lors de la visualisation si pas de points d'eau
-qtm(all_eau_points_parking)
-qtm(all_eau_lignes_parking)
-qtm(all_eau_polygones_parking)
+  if (!is_empty_sf(all_eau_points_parking)) {
+    return(qtm(all_eau_points_parking))
+  } 
+  if (!is_empty_sf(all_eau_lignes_parking)) {
+    return(qtm(all_eau_lignes_parking))
+  }
+  if (!is_empty_sf(all_eau_polygones_parking)) {
+    return(qtm(all_eau_polygones_parking))
+  } 
 
 
 # Comparaison avec les données de l'IGN 
@@ -414,9 +429,15 @@ detail_eau_parking <- st_intersection(detail_eau_foret["geometry"],
                                       pression_gp_parking$ptit_pression["geometry"])
 
 # Visualisation des éléments "eau" de l'IGN à moins d'1km des parking
-qtm(cours_eau_parking)
-qtm(plan_eau_parking)
-qtm(detail_eau_parking)
+  if (!is_empty_sf(cours_eau_parking)) {
+    return(qtm(cours_eau_parking))
+  } 
+  if (!is_empty_sf(plan_eau_parking)) {
+    return(qtm(plan_eau_parking))
+  } 
+  if (!is_empty_sf(detail_eau_parking)) {
+    return(qtm(detail_eau_parking))
+  } 
 ```
 
 # Passage sur le SIG 
