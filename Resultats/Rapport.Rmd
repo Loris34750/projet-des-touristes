@@ -153,7 +153,8 @@ buffer.points <- function(sf, x, color){
 pression_commune <- buffer.points(ptit_commune, x = 0, color = "green") +
   buffer.points(moy_commune, x = 0, color = "yellow") +
   buffer.points(grde_commune, x = 0, color = "red")
-print(pression_commune)
+
+pression_commune
 
 # Calcul du nombre total d'habitants dans les villes de l'isochrone
 nb_hab_pression <- sum(commune_5000[["population"]])
@@ -231,29 +232,29 @@ surface_rech_route <- st_buffer(surface_foret,
                                 50)
 
 # Sélection des routes traversant et longeant la forêt
-routes_foret <- get_wfs(surface_rech_route,
+route_foret <- get_wfs(surface_rech_route,
                         "BDTOPO_V3:troncon_de_route",
                         spatial_filter = "intersects") 
 
 # Création de buffer selon la nature des routes
 # importance 1 = liaison entre métropoles
-route_imp1 <- buffer.route.taille(routes_foret, 1, 150)
+route_imp1 <- buffer.route.taille(route_foret, 1, 150)
 # importance 2 = liaison entre départements
-route_imp2 <- buffer.route.taille(routes_foret, 2, 110)
+route_imp2 <- buffer.route.taille(route_foret, 2, 110)
 # importance 3 = liaison entre communes dans un même département
-route_imp3 <- buffer.route.taille(routes_foret, 3, 100)
+route_imp3 <- buffer.route.taille(route_foret, 3, 100)
 # importance 4 = voies rapides dans une commune
-route_imp4 <- buffer.route.taille(routes_foret, 4, 80)
+route_imp4 <- buffer.route.taille(route_foret, 4, 80)
 # importance 5 = routes dans une commune 
-route_imp5 <- buffer.route.taille(routes_foret, 5, 50)
+route_imp5 <- buffer.route.taille(route_foret, 5, 50)
 
 # Visualisation de la pression des routes
-pression_routes <- buffer.diff.routes(routes_foret)
+pression_routes <- buffer.diff.routes(route_foret)
 
 # Message d'avis possible : st_as_s2(): dropping Z and/or M coordinate
 # A ne pas prendre en compte car la coodinate z n'existe pas dans notre étude
 
-print(pression_routes)
+pression_routes
 ```
 
 # Pression du grand public autour des parkings
@@ -288,7 +289,9 @@ map <- tm_shape(surface_foret) +
 map <- map + tm_shape(ptit_pression_parking_sf) + tm_polygons(col = 'green')
 map <- map + tm_shape(moy_pression_parking_sf) + tm_polygons(col = 'orange')
 map <- map + tm_shape(grde_pression_parking_sf) + tm_polygons(col = 'red')
-print(map)
+
+map
+
 ```
 
 # Visualisation des sentiers
@@ -445,125 +448,44 @@ detail_eau_parking <- st_intersection(detail_eau_foret["geometry"],
   Afin de pouvoir produire des cartes présentables aux élus et/ou à d'autres forestiers, il est nécessaire de créer un géopackage regroupant l'ensemble des couches produites durant cette étude. Ce faisant, il ne restera plus qu'au gestionnaire de choisir sa symbologie selon ses habitudes afin d'obtenir des cartes claires et précises. 
 
 ```{r Passage SIG}
-# Fonction permettant l'enregistrement dans un géopackage des couches d'intérêt
-sauvegarde.gpkg <- function(nom_gpkg){
-  st_write(st_transform(surface_foret, 2154), 
-           nom_gpkg,
-           layer = "surface_foret")
-  
-  st_write(st_transform(groupe_parking, 2154), 
-           nom_gpkg,
-           layer = "groupe_parking")
-  
-  st_write(st_transform(grde_pression_parking_sf,2154), 
-           nom_gpkg,
-           layer = "grde_pression_parking_sf")
-  
-  st_write(st_transform(moy_pression_parking_sf, 2154),
-           nom_gpkg,
-           layer = "moy_pression_parking_sf")
-  
-  st_write(st_transform(ptit_pression_parking_sf, 2154), 
-           nom_gpkg,
-           layer = "ptit_pression_parking_sf")
-  
-  if (!is_empty_sf(chemin_foret)) {
-    return(st_write(st_transform(chemin_foret, 2154),
-           nom_gpkg,
-           layer = "chemin_foret"))
+# Fonction permettant l'enregistrement dans un géopackage
+
+sauvegarde.gpkg <- function(nom_gpkg) {
+  # Liste des objets sf et leurs noms
+  sf_layers <- list(
+    surface_foret = "surface_foret",
+    groupe_parking = "groupe_parking",
+    grde_pression_parking_sf = "grde_pression_parking_sf",
+    moy_pression_parking_sf = "moy_pression_parking_sf",
+    ptit_pression_parking_sf = "ptit_pression_parking_sf",
+    iso_30 = "iso_30",
+    commune_5000 = "commune_5000",
+    route_foret = "route_foret",
+    chemin_foret = "chemin_foret",
+    chemin_freq = "chemin_freq",
+    chemin_osm_foret = "chemin_osm_foret",
+    chemin_osm_freq = "chemin_osm_freq",
+    route_imp1 = "route_imp1",
+    route_imp2 = "route_imp2",
+    route_imp3 = "route_imp3",
+    route_imp4 = "route_imp4",
+    route_imp5 = "route_imp5",
+    all_eau_lignes_parking = "all_eau_lignes_parking",
+    all_eau_polygones_parking = "all_eau_polygones_parking",
+    cours_eau_parking = "cours_eau_parking",
+    plan_eau_parking = "plan_eau_parking",
+    detail_eau_parking = "detail_eau_parking"
+  )
+
+  for (sf_name in names(sf_layers)) {
+    obj <- tryCatch(get(sf_name), error = function(e) NULL)  # Récupère l'objet ou retourne NULL si inexistant
+    if (!is.null(obj) && !is_empty_sf(obj)) {
+      st_write(st_transform(obj, 2154), 
+               nom_gpkg, 
+               layer = sf_layers[[sf_name]])
+    }
   }
-  
-
-  if (!is_empty_sf(chemin_freq)) {
-    return(st_write(st_transform(chemin_freq, 2154),
-                    nom_gpkg,
-                    layer = "chemin_freq"))
-  } 
-  if (!is_empty_sf(chemin_osm_foret)) {
-    return(st_write(st_transform(chemin_osm_foret, 2154),
-                    nom_gpkg,
-                    layer = "chemin_osm_foret"))
-  } 
-  if (!is_empty_sf(chemin_osm_freq)) {
-    return(st_write(st_transform(chemin_osm_freq, 2154),
-                    nom_gpkg,
-                    layer = "chemin_osm_freq"))
-  } 
-
-  st_write(st_transform(iso_30, 2154),
-           nom_gpkg,
-           layer = "iso_30")
-  
-  st_write(st_transform(commune_5000, 2154),
-           nom_gpkg,
-           layer = "commune_5000")
-  
-  st_write(st_transform(route_foret, 2154),
-           nom_gpkg,
-           layer = "route_foret")
-  
-  if (!is_empty_sf(route_imp1)) {
-    return(st_write(st_transform(route_imp1, 2154),
-                    nom_gpkg,
-                    layer = "route_imp1"))
-  }   
-
-  if (!is_empty_sf(route_imp2)) {
-    return(st_write(st_transform(route_imp2, 2154),
-                    nom_gpkg,
-                    layer = "route_imp2"))
-  }    
-
-  if (!is_empty_sf(route_imp3)) {
-    return(st_write(st_transform(route_imp3, 2154),
-                    nom_gpkg,
-                    layer = "route_imp3"))
-  } 
-
-  if (!is_empty_sf(route_imp4)) {
-    return(st_write(st_transform(route_imp4, 2154),
-                    nom_gpkg,
-                    layer = "route_imp4"))
-  } 
-  
-  if (!is_empty_sf(route_imp5)) {
-    return(st_write(st_transform(route_imp5, 2154),
-                    nom_gpkg,
-                    layer = "route_imp5"))
-  } 
- 
-  if (!is_empty_sf(all_eau_lignes_parking)) {
-    return(st_write(st_transform(all_eau_lignes_parking, 2154),
-                    nom_gpkg,
-                    layer = "all_eau_lignes_parking"))
-  } 
-
-  if (!is_empty_sf(all_eau_polygones_parking)) {
-    return(st_write(st_transform(all_eau_polygones_parking, 2154),
-                    nom_gpkg,
-                    layer = "all_eau_polygones_parking"))
-  } 
-
-  if (!is_empty_sf(cours_eau_parking)) {
-    return(st_write(st_transform(cours_eau_parking, 2154),
-                    nom_gpkg,
-                    layer = "cours_eau_parking"))
-  }   
-  
-  if (!is_empty_sf(plan_eau_parking)) {
-    return(st_write(st_transform(plan_eau_parking, 2154),
-                    nom_gpkg,
-                    layer = "plan_eau_parking"))
-  }   
-  
-  if (!is_empty_sf(detail_eau_parking)) {
-    return(st_write(st_transform(detail_eau_parking, 2154),
-                    nom_gpkg,
-                    layer = "detail_eau_parking"))
-  }   
-  
 }
-
 
 # Chemin d'accès où sera enregistré le gpkg
 getwd()
