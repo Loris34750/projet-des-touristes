@@ -176,6 +176,19 @@ sauvegarde.gpkg <- function(nom_gpkg){
   st_write(st_transform(all_eau_polygones_parking, 2154),
            nom_gpkg,
            layer = "all_eau_polygones_parking")
+  
+  st_write(st_transform(cours_eau_parking, 2154),
+           nom_gpkg,
+           layer = "cours_eau_parking")
+  
+  st_write(st_transform(plan_eau_parking, 2154),
+           nom_gpkg,
+           layer = "plan_eau_parking")
+  
+  st_write(st_transform(detail_eau_parking, 2154),
+           nom_gpkg,
+           layer = "detail_eau_parking")
+  
 }
 
 
@@ -423,6 +436,35 @@ qtm(all_eau_points_parking)
 qtm(all_eau_lignes_parking)
 qtm(all_eau_polygones_parking)
 
+# Comparaison avec les données de l'IGN 
+
+cours_eau <- get_wfs(surface_foret,
+                     "BDTOPO_V3:cours_d_eau",
+                     spatial_filter = "intersects") 
+plan_eau <- get_wfs(surface_foret,
+                    "BDTOPO_V3:plan_d_eau",
+                    spatial_filter = "intersects") 
+detail_eau <- get_wfs(surface_foret,
+                      "BDTOPO_V3:detail_hydrographique",
+                      spatial_filter = "intersects")
+
+cours_eau_foret <- st_intersection(cours_eau["geometry"],
+                                   surface_foret["geometry"])
+plan_eau_foret <- st_intersection(plan_eau["geometry"],
+                                  surface_foret["geometry"])
+detail_eau_foret <- st_intersection(detail_eau["geometry"],
+                                    surface_foret["geometry"])
+
+cours_eau_parking <- st_intersection(cours_eau_foret["geometry"],
+                                     pression_gp_parking$ptit_pression["geometry"])
+plan_eau_parking <- st_intersection(plan_eau_foret["geometry"],
+                                    pression_gp_parking$ptit_pression["geometry"])
+detail_eau_parking <- st_intersection(detail_eau_foret["geometry"],
+                                      pression_gp_parking$ptit_pression["geometry"])
+
+qtm(cours_eau_parking)
+qtm(plan_eau_parking)
+qtm(detail_eau_parking)
 
 # Partie 7 : Sauvegarde des données créées dans un géopackage ----
 
