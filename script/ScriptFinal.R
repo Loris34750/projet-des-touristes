@@ -101,79 +101,98 @@ buffer.diff.routes <- function(sf) {
 
 # Fonction permettant l'enregistrement dans un géopackage des couches d'intérêt
 sauvegarde.gpkg <- function(nom_gpkg){
-  st_write(surface_foret, 
+  st_write(st_transform(surface_foret,
+                        2154),
            nom_gpkg,
            layer = "surface_foret")
   
-  st_write(groupe_parking, 
+  st_write(st_transform(groupe_parking,
+                        2154), 
            nom_gpkg,
            layer = "groupe_parking")
   
-  st_write(grde_pression_parking_sf, 
+  st_write(st_transform(grde_pression_parking_sf,
+                        2154), 
            nom_gpkg,
            layer = "grde_pression_parking_sf")
   
-  st_write(moy_pression_parking_sf, 
+  st_write(st_transform(moy_pression_parking_sf,
+                        2154), 
            nom_gpkg,
            layer = "moy_pression_parking_sf")
   
-  st_write(ptit_pression_parking_sf, 
+  st_write(st_transform(ptit_pression_parking_sf,
+                        2154), 
            nom_gpkg,
            layer = "ptit_pression_parking_sf")
   
-  st_write(chemin_foret, 
+  st_write(st_transform(chemin_foret,
+                        2154), 
            nom_gpkg,
            layer = "chemin_foret")
   
-  st_write(chemin_freq, 
+  st_write(st_transform(chemin_freq,
+                        2154), 
            nom_gpkg,
            layer = "chemin_freq")
   
-  st_write(chemin_osm_foret, 
+  st_write(st_transform(chemin_osm_foret,
+                        2154), 
            nom_gpkg,
            layer = "chemin_osm_foret")
   
-  st_write(chemin_osm_freq, 
+  st_write(st_transform(chemin_osm_freq,
+                        2154), 
            nom_gpkg,
            layer = "chemin_osm_freq")
   
-  st_write(iso_30, 
+  st_write(st_transform(iso_30,
+                        2154), 
            nom_gpkg,
            layer = "iso_30")
   
-  st_write(commune_5000, 
+  st_write(st_transform(commune_5000,
+                        2154), 
            nom_gpkg,
            layer = "commune_5000")
   
-  st_write(routes_foret, 
+  st_write(st_transform(route_foret,
+                        2154), 
            nom_gpkg,
-           layer = "routes_foret")
+           layer = "route_foret")
   
-  st_write(route_imp1, 
+  st_write(st_transform(route_imp1,
+                        2154), 
            nom_gpkg,
-           layer = "routes_imp1")
+           layer = "route_imp1")
   
-  st_write(route_imp2, 
+  st_write(st_transform(route_imp2,
+                        2154), 
            nom_gpkg,
-           layer = "routes_imp2")
+           layer = "route_imp2")
   
-  st_write(route_imp3, 
+  st_write(st_transform(route_imp3,
+                        2154), 
            nom_gpkg,
-           layer = "routes_imp3")
+           layer = "route_imp3")
   
-  st_write(route_imp4, 
+  st_write(st_transform(route_imp4,
+                        2154), 
            nom_gpkg,
-           layer = "routes_imp4")
+           layer = "route_imp4")
   
-  st_write(route_imp5, 
+  st_write(st_transform(route_imp5,
+                        2154), 
            nom_gpkg,
-           layer = "routes_imp5")
+           layer = "route_imp5")
   
-  st_write(all_eau_lignes_parking, 
+  st_write(st_transform(all_eau_lignes_parking,
+                        2154), 
            nom_gpkg,
            layer = "all_eau_lignes_parking")
   
-  st_write(all_eau_polygones_parking, 
+  st_write(st_transform(all_eau_polygones_parking,
+                        2154), 
            nom_gpkg,
            layer = "all_eau_polygones_parking")
 }
@@ -348,25 +367,37 @@ surface_rech_route <- st_buffer(surface_foret,
                                 50)
 
 # Sélection des routes traversant et longeant la forêt
+<<<<<<< HEAD
+route_foret <- get_wfs(surface_rech_route,
+                           "BDTOPO_V3:troncon_de_route",
+                           spatial_filter = "intersects") 
+=======
 routes_foret <- get_wfs(surface_rech_route,
                         "BDTOPO_V3:troncon_de_route",
                         spatial_filter = "intersects") 
+>>>>>>> 9b26f79c511555f3e9887e5f93fdae8f14c9b42e
 
 # Création de buffer selon la nature des routes
 # importance 1 = liaison entre métropoles
-route_imp1 <- buffer.route.taille(routes_foret, 1, 150)
+route_imp1 <- buffer.route.taille(route_foret, 1, 150)
 # importance 2 = liaison entre départements
-route_imp2 <- buffer.route.taille(routes_foret, 2, 110)
+route_imp2 <- buffer.route.taille(route_foret, 2, 110)
 # importance 3 = liaison entre communes dans un même département
+<<<<<<< HEAD
+route_imp3 <- buffer.route.taille(route_foret, 3, 100)
+# importance 4 = voies rapides dans commune
+route_imp4 <- buffer.route.taille(route_foret, 4, 80)
+=======
 route_imp3 <- buffer.route.taille(routes_foret, 3, 100)
 # importance 4 = voies rapides dans une commune
 route_imp4 <- buffer.route.taille(routes_foret, 4, 80)
+>>>>>>> 9b26f79c511555f3e9887e5f93fdae8f14c9b42e
 # importance 5 = routes dans une commune 
-route_imp5 <- buffer.route.taille(routes_foret, 5, 50)
+route_imp5 <- buffer.route.taille(route_foret, 5, 50)
 
 # Visualisation de la pression des routes
-pression_routes <- buffer.diff.routes(routes_foret)
-print(pression_routes)
+pression_route <- buffer.diff.routes(route_foret)
+print(pression_route)
 
 
 # Partie 6 : Identification des zones d'intérêt "eau" ----
@@ -429,6 +460,6 @@ qtm(all_eau_polygones_parking)
 # Chemin d'accès où sera enregistré le gpkg
 getwd()
 
-dossier_gpkg <- sauvegarde.gpkg("impact_freq.gpkg")
+dossier_gpkg <- sauvegarde.gpkg("impact_freq_brin_l93_2.gpkg")
 
  
