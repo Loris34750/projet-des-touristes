@@ -17,13 +17,19 @@ Partie 1 : Choix de la forêt par le gestionnaire.
 
 Partie 2 : Identification des villes de plus de 5000 habitants à proximité de la forêt, et classification de ces villes. 
 
+
+
 Partie 3 : Identification des infrastructures à proximité et à l'intérieur de la forêt. 
+
+
 
 Partie 4 : Pression du grand public autour des parkings, grâce à des buffers. 
 
-Partie 5 : Visualisation des sentiers dans la forêt. 
 
-Partie 6 : Visualisation des points d'eau présents dans la forêt. 
+
+Partie 5 et 6 : Visualisation des sentiers et des points d'eau dans la forêt. 
+
+
 
 Partie 7 : Génération d'un fichier .gpkg pour obtenir une carte sur Qgis. 
 
