@@ -1,6 +1,7 @@
 # A propos du script ----
 
-# Objectif du script : 
+# Objectif du script : Représentation cartographique de la fréquentation en 
+# forêt et de son impact, outil à destination du gestionnaire
 
 # Auteurs : Cattanéo Tifaine, Gonzalez Loris, Pidoux Ella, Vergnol Marion
 
@@ -21,7 +22,7 @@ librarian::shelf(happign,  # pour les données Web et IGN
                  osrm,  # pour manipuler les données d'openstreetmap
                  sf,  # pour manipuler les données vecteurs
                  tmap,  # pour la visualisation des cartes
-                 dplyr)  #
+                 dplyr)  # pour manipuler les données dans les tables
 
 tmap_mode("view")  # passe en mode interactif pour l'affichage des cartes
 
@@ -32,13 +33,13 @@ setwd("E:/APT/GF/UE2_R_SIG/ProjetR")
 
 # Fonctions ----
 
-# Fonction pour la création d'un buffer de x mètres et choix couleur buffer
+# Fonction pour la création d'un buffer de x mètres et choix des couleurs
 buffer.points <- function(sf, x, color){
   buffer <- st_buffer(sf, x)
   map <- tm_shape(buffer) + tm_polygons(col = color)
 }
 
-# Fonction qui crée les buffers de pression qui se cumulent
+# Fonction qui crée des buffers de pression qui se cumulent en distance
 pression.buffer <- function(sf){
   grde_pression <- st_buffer(sf, 500)
   moy_pression <- st_buffer(grde_pression, 250)
@@ -55,9 +56,9 @@ is_empty_sf <- function(sf) {
   return(nrow(sf) == 0)
 }
 
-# Fonction qui crée un buffer en fonction de l'importance de la route
+# Fonction qui crée un buffer de distance x m en fonction de l'importance y de
+# la route
 buffer.route.taille <- function(sf, y, x){
-  # y = importance ; x = dist
   routes <- subset(sf,
                    sf$importance == y)
   buffer <- st_buffer(routes,
@@ -68,9 +69,9 @@ buffer.route.taille <- function(sf, y, x){
   } 
 }
 
-# Fonction pour visualisation d'un buffer route et attribution d'une couleur
+# Fonction pour visualisation d'un buffer de distance x mètres pour une route
+# d'importance y et attribution d'une couleur
 buffer.taille.couleur <- function(sf, y, x, color){
-  # y = importance ; x = dist ; color = couleur
   routes <- subset(sf,
                    sf$importance == y)
   buffer <- st_buffer(routes,
@@ -98,8 +99,7 @@ buffer.diff.routes <- function(sf) {
   print(map)
 }
 
-# Fonction permettant l'enregistrement dans un géopackage 
-
+# Fonction permettant l'enregistrement dans un géopackage des couches d'intérêt
 sauvegarde.gpkg <- function(nom_gpkg){
   st_write(st_transform(surface_foret,
                         2154),
@@ -195,31 +195,24 @@ sauvegarde.gpkg <- function(nom_gpkg){
                         2154), 
            nom_gpkg,
            layer = "all_eau_polygones_parking")
-  
-  
-  #writeRaster(IRC,
-            #  nom_gpkg,
-             # filetype = "GPKG",
-              # gdal = c("APPEND_SUBDATASET=YES",
-              #         "RASTER_TABLE=IRC"))
-  
 }
+
 
 # Partie 1 : Identification de la forêt ----
 
 # Sélection de la forêt par un point
 point_foret <- mapedit::drawFeatures()
 
-# Délimitation de la surface de la forêt (polygone)
+# Délimitation de la surface de la forêt
 surface_foret <- get_wfs(x = point_foret,
                          layer = "BDTOPO_V3:foret_publique")
 
 
 # Partie 2 : Identification des points de parking en forêt et à 500m autour ----
 
-# Faire une surface de 500m autour de la surface de la forêt
+# Faire une surface englobant la forêt et les 500m alentour
 surface_rech_parking <- st_buffer(surface_foret,
-                                500)
+                                  500)
 
 # Création d'une bbox
 bbox_foret <- st_bbox(surface_rech_parking)
@@ -240,11 +233,12 @@ parking_foret <- st_intersection(parking_sf["geometry"],
 # Regrouper les points situés à moins de 200m les uns des autres et création
 # d'un unique point centroïde pour les nouveaux groupements
 
-# Crée pour chaque point de parking une liste de points de parking situés à
-# moins de 200m
-dist_parking <- st_is_within_distance(parking_foret, dist = 200)
+# Création pour chaque point de parking d'une liste de points de parking situés
+# à moins de 200m
+dist_parking <- st_is_within_distance(parking_foret,
+                                      dist = 200)
 
-# Crée un vecteur vide de longueur le nombre de points de parking
+# Crééation d'un vecteur vide de longueur le nombre de points de parking
 clusters <- rep(NA, length(dist_parking))
 
 # Attribution d'un numéro à chaque groupe de points de parking à moins de 200m
@@ -259,12 +253,12 @@ for (i in seq_along(dist_parking)) {  # on parcours la liste des parking
       j <- queue[1]
       queue <- queue[-1]
       if (is.na(clusters[j])) {  # on vérifie que le point n'est pas déjà dans
-        # dans un autre groupe et on l'ajoute au groupe en cours
+        # dans un autre groupe et on l'ajoute au groupe actuel
         clusters[j] <- cluster_id
         queue <- c(queue, dist_parking[[j]])
       }
     }
-    cluster_id <- cluster_id + 1  # on passe ou groupe de points suivant
+    cluster_id <- cluster_id + 1  # on passe au groupe de points suivant
   }
 }
 
@@ -276,6 +270,7 @@ groupe_parking <- parking_foret %>%  # on calcule le centroïde de chaque groupe
   summarise(geometry = st_centroid(st_combine(geometry))) %>%
   ungroup()
 
+# Visualisation des points de parking
 qtm(groupe_parking)
 
 # Buffer de pression du grand public autour des parkings 
@@ -297,7 +292,7 @@ print(map)
 
 # Partie 3 : Pression sur les chemins aux abords des parking ----
 
-#Données pédestre issues d'IGN
+# Données pédestres issues de l'IGN
 troncons <- get_wfs(x = surface_foret,
                     layer = "BDTOPO_V3:troncon_de_route",
                     spatial_filter = "intersects")
@@ -325,9 +320,9 @@ osm_chemin <- osmdata_sf(query_chemin_osm)
 chemin_osm_sf <- osm_chemin$osm_lines  
 
 chemin_osm_foret <- st_intersection(chemin_osm_sf["geometry"],
-                               surface_foret["geometry"])
+                                    surface_foret["geometry"])
 chemin_osm_freq <- st_intersection(chemin_osm_foret["geometry"],
-                               pression_gp_parking$ptit_pression["geometry"]) 
+                                   pression_gp_parking$ptit_pression["geometry"]) 
 
 # Visualisation des chemins osm les plus fréquentés
 qtm(chemin_osm_freq)
@@ -349,7 +344,6 @@ commune_iso <- get_wfs(x = iso_30,
 commune_5000 <- commune_iso[commune_iso$population >= 5000, ]
 
 # Pression des communes selon le nombre d'habitants 
-# Classification des communes en fonction de la population
 ptit_commune <- commune_5000[commune_5000$population <= 7000, ]
 moy_commune <- commune_5000[commune_5000$population > 7000 & commune_5000$population <= 10000, ]
 grde_commune <- commune_5000[commune_5000$population > 10000, ]
@@ -361,18 +355,27 @@ pression_commune <- buffer.points(ptit_commune, x = 0, color = "green") +
   buffer.points(grde_commune, x = 0, color = "red")
 print(pression_commune)
 
+# Calcul du nombre total d'habitants dans les villes de l'isochrone
+nb_hab_pression <- sum(commune_5000[["population"]])
+nb_hab_pression
 
 # Partie 5 : Pression des routes ----
 
 # Faire nouvelle surface de recherche des routes dans la forêt et à 50m autour
-# (pour inclure les routes longeant la forêt sans la pénétrer)
+# (pour inclure les routes longeant les limites de la forêt sans les croiser)
 surface_rech_route <- st_buffer(surface_foret,
-                                     50)
+                                50)
 
 # Sélection des routes traversant et longeant la forêt
+<<<<<<< HEAD
 route_foret <- get_wfs(surface_rech_route,
                            "BDTOPO_V3:troncon_de_route",
                            spatial_filter = "intersects") 
+=======
+routes_foret <- get_wfs(surface_rech_route,
+                        "BDTOPO_V3:troncon_de_route",
+                        spatial_filter = "intersects") 
+>>>>>>> 9b26f79c511555f3e9887e5f93fdae8f14c9b42e
 
 # Création de buffer selon la nature des routes
 # importance 1 = liaison entre métropoles
@@ -380,9 +383,15 @@ route_imp1 <- buffer.route.taille(route_foret, 1, 150)
 # importance 2 = liaison entre départements
 route_imp2 <- buffer.route.taille(route_foret, 2, 110)
 # importance 3 = liaison entre communes dans un même département
+<<<<<<< HEAD
 route_imp3 <- buffer.route.taille(route_foret, 3, 100)
 # importance 4 = voies rapides dans commune
 route_imp4 <- buffer.route.taille(route_foret, 4, 80)
+=======
+route_imp3 <- buffer.route.taille(routes_foret, 3, 100)
+# importance 4 = voies rapides dans une commune
+route_imp4 <- buffer.route.taille(routes_foret, 4, 80)
+>>>>>>> 9b26f79c511555f3e9887e5f93fdae8f14c9b42e
 # importance 5 = routes dans une commune 
 route_imp5 <- buffer.route.taille(route_foret, 5, 50)
 
@@ -414,21 +423,21 @@ query_natural <- opq(bbox = bbox_foret) |>
   add_osm_feature(key = 'natural',
                   value = c('water'))  # masse d'eau naturelle
 
-# Fusion des éléments eau obtenus avec les  key différentes
+# Fusion des éléments "eau" obtenus avec les  key différentes
 all_eau <- c(osmdata_sf(query_water),
              osmdata_sf(query_waterway),
              osmdata_sf(query_natural))
 
-# Création d'une couche vecteur selon la nature des éléments eau
+# Création d'une couche vecteur selon la nature des éléments "eau"
 all_eau_points_sf <- all_eau$osm_points
 all_eau_lignes_sf <- all_eau$osm_lines
 all_eau_polygones_sf <- all_eau$osm_polygons
 
-#Sélection des éléments eau dans la forêt et à 1km autour des parking
+# Sélection des éléments "eau" dans la forêt et à 1km autour des parking
 all_eau_points_foret <- st_intersection(all_eau_points_sf["geometry"],
                                         surface_foret["geometry"])
 all_eau_points_parking <- st_intersection(all_eau_points_foret["geometry"],
-                                        pression_gp_parking$ptit_pression["geometry"])
+                                          pression_gp_parking$ptit_pression["geometry"])
 
 all_eau_lignes_foret <- st_intersection(all_eau_lignes_sf["geometry"],
                                         surface_foret["geometry"])
@@ -438,9 +447,9 @@ all_eau_lignes_parking <- st_intersection(all_eau_lignes_foret["geometry"],
 all_eau_polygones_foret <- st_intersection(all_eau_polygones_sf["geometry"],
                                            surface_foret["geometry"])
 all_eau_polygones_parking <- st_intersection(all_eau_polygones_foret["geometry"],
-                                          pression_gp_parking$ptit_pression["geometry"])
+                                             pression_gp_parking$ptit_pression["geometry"])
 
-#Visualisation des différents éléments eau à moins d'1km des parking
+# Visualisation des différents éléments "eau" à moins d'1km des parking
 qtm(all_eau_points_parking)
 qtm(all_eau_lignes_parking)
 qtm(all_eau_polygones_parking)
@@ -448,8 +457,8 @@ qtm(all_eau_polygones_parking)
 
 # Partie 7 : Sauvegarde des données créées dans un géopackage ----
 
-getwd()  # Où le gpkg sera enregistré
-# à changer selon les couches qu'on garde 
+# Chemin d'accès où sera enregistré le gpkg
+getwd()
 
 dossier_gpkg <- sauvegarde.gpkg("impact_freq_brin_l93_2.gpkg")
 
