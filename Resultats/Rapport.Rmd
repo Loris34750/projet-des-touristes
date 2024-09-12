@@ -337,3 +337,97 @@ qtm(all_eau_lignes_parking)
 qtm(all_eau_polygones_parking)
 ```
 
+# Passage sur le SIG 
+
+  Afin de pouvoir produire des cartes présentables aux élus et/ou à d'autres forestiers, il est nécessaire de créer un géopackage regroupant l'ensemble des couches produites durant cette étude. En faisant cela, il ne restera plus qu'au gestionnaire de choisir sa ssymbologie selon ses habitudes afin d'obtenir des cartes claires et précises. 
+
+```{r Passage SIG}
+
+sauvegarde.gpkg <- function(nom_gpkg){
+  st_write(surface_foret, 
+           nom_gpkg,
+           layer = "surface_foret")
+  
+  st_write(groupe_parking, 
+           nom_gpkg,
+           layer = "groupe_parking")
+  
+  st_write(grde_pression_parking_sf, 
+           nom_gpkg,
+           layer = "grde_pression_parking_sf")
+  
+  st_write(moy_pression_parking_sf, 
+           nom_gpkg,
+           layer = "moy_pression_parking_sf")
+  
+  st_write(ptit_pression_parking_sf, 
+           nom_gpkg,
+           layer = "ptit_pression_parking_sf")
+  
+  st_write(chemin_foret, 
+           nom_gpkg,
+           layer = "chemin_foret")
+  
+  st_write(chemin_freq, 
+           nom_gpkg,
+           layer = "chemin_freq")
+  
+  st_write(chemin_osm_foret, 
+           nom_gpkg,
+           layer = "chemin_osm_foret")
+  
+  st_write(chemin_osm_freq, 
+           nom_gpkg,
+           layer = "chemin_osm_freq")
+  
+  st_write(iso_30, 
+           nom_gpkg,
+           layer = "iso_30")
+  
+  st_write(commune_5000, 
+           nom_gpkg,
+           layer = "commune_5000")
+  
+  st_write(routes_foret, 
+           nom_gpkg,
+           layer = "routes_foret")
+  
+  st_write(route_imp1, 
+           nom_gpkg,
+           layer = "routes_imp1")
+  
+  st_write(route_imp2, 
+           nom_gpkg,
+           layer = "routes_imp2")
+  
+  st_write(route_imp3, 
+           nom_gpkg,
+           layer = "routes_imp3")
+  
+  st_write(route_imp4, 
+           nom_gpkg,
+           layer = "routes_imp4")
+  
+  st_write(route_imp5, 
+           nom_gpkg,
+           layer = "routes_imp5")
+  
+  st_write(all_eau_lignes_parking, 
+           nom_gpkg,
+           layer = "all_eau_lignes_parking")
+  
+  st_write(all_eau_polygones_parking, 
+           nom_gpkg,
+           layer = "all_eau_polygones_parking")
+}
+
+getwd()  # Où le gpkg sera enregistré
+
+dossier_gpkg <- sauvegarde.gpkg("impact_freq.gpkg")
+
+```
+  
+
+# Conclusion 
+
+  Il a été observé plusieurs points pouvant peser différents types de pression sur la forêt étudiée. Le gestionnaire, grâce à ses données et aux cartes générées sur SIG, peut désormais agir en conséquence pour produire un plan d'aménagement cohérent et en prenant en compte le regard du public et des conséquences de leur passage en forêt. 
