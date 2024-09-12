@@ -265,7 +265,7 @@ clusters <- rep(NA, length(dist_parking))
 
 # Attribution d'un numéro à chaque groupe de points de parking à moins de 200m
 cluster_id <- 1
-for (i in seq_along(dist_parking)) {  # on parcours la liste des parking
+for (i in seq_along(dist_parking)) {  # on parcours la liste des parkings
   if (is.na(clusters[i])) {
     clusters[i] <- cluster_id  # si le point n'a pas déjà un n° de cluster on
     # lui donne le n° actuel
@@ -298,7 +298,7 @@ qtm(groupe_parking)
 # Buffer de pression du grand public autour des parkings 
 pression_gp_parking <- pression.buffer(groupe_parking)
 
-# Accéder aux buffers de pression des parking
+# Accéder aux buffers de pression des parkings
 grde_pression_parking_sf <- pression_gp_parking$grde_pression
 moy_pression_parking_sf <- pression_gp_parking$moy_pression
 ptit_pression_parking_sf <- pression_gp_parking$ptit_pression
@@ -312,7 +312,7 @@ map <- map + tm_shape(grde_pression_parking_sf) + tm_polygons(col = 'red')
 print(map)
 
 
-# Partie 3 : Pression sur les chemins aux abords des parking ----
+# Partie 3 : Pression sur les chemins aux abords des parkings ----
 
 # Données pédestres issues de l'IGN
 troncons <- get_wfs(x = surface_foret,
@@ -353,9 +353,9 @@ qtm(chemin_osm_freq)
 
 
 # Partie 4 : Identification des villes de plus de 5000 habitants à moins ----
-# de 30 min en voiture des parking de la forêt
+# de 30 min en voiture des parkings de la forêt
 
-# Calcul des isochrones de 30 min en voiture des parking de la forêt
+# Calcul des isochrones de 30 min en voiture des parkings de la forêt
 iso_30 <- osrmIsochrone(groupe_parking["geometry"],
                         breaks = 30,
                         res = 20)
@@ -445,7 +445,7 @@ all_eau_points_sf <- all_eau$osm_points
 all_eau_lignes_sf <- all_eau$osm_lines
 all_eau_polygones_sf <- all_eau$osm_polygons
 
-# Sélection des éléments "eau" dans la forêt et à 1km autour des parking
+# Sélection des éléments "eau" dans la forêt et à 1km autour des parkings
 all_eau_points_foret <- st_intersection(all_eau_points_sf["geometry"],
                                         surface_foret["geometry"])
 all_eau_points_parking <- st_intersection(all_eau_points_foret["geometry"],
@@ -461,7 +461,7 @@ all_eau_polygones_foret <- st_intersection(all_eau_polygones_sf["geometry"],
 all_eau_polygones_parking <- st_intersection(all_eau_polygones_foret["geometry"],
                                              pression_gp_parking$ptit_pression["geometry"])
 
-# Visualisation des différents éléments "eau" à moins d'1km des parking
+# Visualisation des différents éléments "eau" à moins d'1km des parkings
 qtm(all_eau_points_parking)
 qtm(all_eau_lignes_parking)
 qtm(all_eau_polygones_parking)
@@ -491,7 +491,7 @@ plan_eau_parking <- st_intersection(plan_eau_foret["geometry"],
 detail_eau_parking <- st_intersection(detail_eau_foret["geometry"],
                                       pression_gp_parking$ptit_pression["geometry"])
 
-# Visualisation des éléments "eau" de l'IGN à moins d'1km des parking
+# Visualisation des éléments "eau" de l'IGN à moins d'1km des parkings
 # Message d'erreur peut apparaître lors de la visualisation si 0 points d'eau
 qtm(cours_eau_parking)
 qtm(plan_eau_parking)
