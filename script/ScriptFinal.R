@@ -121,22 +121,29 @@ sauvegarde.gpkg <- function(nom_gpkg){
            nom_gpkg,
            layer = "ptit_pression_parking_sf")
   
-  st_write(st_transform(chemin_foret, 2154),
+  if (!is_empty_sf(chemin_foret)) {
+    return(st_write(st_transform(chemin_foret, 2154),
            nom_gpkg,
-           layer = "chemin_foret")
+           layer = "chemin_foret"))
+  }
   
-  st_write(st_transform(chemin_freq, 2154),
-           nom_gpkg,
-           layer = "chemin_freq")
-  
-  st_write(st_transform(chemin_osm_foret, 2154),
-           nom_gpkg,
-           layer = "chemin_osm_foret")
-  
-  st_write(st_transform(chemin_osm_freq, 2154),
-           nom_gpkg,
-           layer = "chemin_osm_freq")
-  
+
+  if (!is_empty_sf(chemin_freq)) {
+    return(st_write(st_transform(chemin_freq, 2154),
+                    nom_gpkg,
+                    layer = "chemin_freq"))
+  } 
+  if (!is_empty_sf(chemin_osm_foret)) {
+    return(st_write(st_transform(chemin_osm_foret, 2154),
+                    nom_gpkg,
+                    layer = "chemin_osm_foret"))
+  } 
+  if (!is_empty_sf(chemin_osm_freq)) {
+    return(st_write(st_transform(chemin_osm_freq, 2154),
+                    nom_gpkg,
+                    layer = "chemin_osm_freq"))
+  } 
+
   st_write(st_transform(iso_30, 2154),
            nom_gpkg,
            layer = "iso_30")
@@ -149,45 +156,66 @@ sauvegarde.gpkg <- function(nom_gpkg){
            nom_gpkg,
            layer = "route_foret")
   
-  st_write(st_transform(route_imp1, 2154),
-           nom_gpkg,
-           layer = "route_imp1")
+  if (!is_empty_sf(route_imp1)) {
+    return(st_write(st_transform(route_imp1, 2154),
+                    nom_gpkg,
+                    layer = "route_imp1"))
+  }   
+
+  if (!is_empty_sf(route_imp2)) {
+    return(st_write(st_transform(route_imp2, 2154),
+                    nom_gpkg,
+                    layer = "route_imp2"))
+  }    
+
+  if (!is_empty_sf(route_imp3)) {
+    return(st_write(st_transform(route_imp3, 2154),
+                    nom_gpkg,
+                    layer = "route_imp3"))
+  } 
+
+  if (!is_empty_sf(route_imp4)) {
+    return(st_write(st_transform(route_imp4, 2154),
+                    nom_gpkg,
+                    layer = "route_imp4"))
+  } 
   
-  st_write(st_transform(route_imp2, 2154),
-           nom_gpkg,
-           layer = "route_imp2")
+  if (!is_empty_sf(route_imp5)) {
+    return(st_write(st_transform(route_imp5, 2154),
+                    nom_gpkg,
+                    layer = "route_imp5"))
+  } 
+ 
+  if (!is_empty_sf(all_eau_lignes_parking)) {
+    return(st_write(st_transform(all_eau_lignes_parking, 2154),
+                    nom_gpkg,
+                    layer = "all_eau_lignes_parking"))
+  } 
+
+  if (!is_empty_sf(all_eau_polygones_parking)) {
+    return(st_write(st_transform(all_eau_polygones_parking, 2154),
+                    nom_gpkg,
+                    layer = "all_eau_polygones_parking"))
+  } 
+
+  if (!is_empty_sf(cours_eau_parking)) {
+    return(st_write(st_transform(cours_eau_parking, 2154),
+                    nom_gpkg,
+                    layer = "cours_eau_parking"))
+  }   
   
-  st_write(st_transform(route_imp3, 2154),
-           nom_gpkg,
-           layer = "route_imp3")
+  if (!is_empty_sf(plan_eau_parking)) {
+    return(st_write(st_transform(plan_eau_parking, 2154),
+                    nom_gpkg,
+                    layer = "plan_eau_parking"))
+  }   
   
-  st_write(st_transform(route_imp4, 2154),
-           nom_gpkg,
-           layer = "route_imp4")
+  if (!is_empty_sf(detail_eau_parking)) {
+    return(st_write(st_transform(detail_eau_parking, 2154),
+                    nom_gpkg,
+                    layer = "detail_eau_parking"))
+  }   
   
-  st_write(st_transform(route_imp5, 2154),
-           nom_gpkg,
-           layer = "route_imp5")
-  
-  st_write(st_transform(all_eau_lignes_parking, 2154),
-           nom_gpkg,
-           layer = "all_eau_lignes_parking")
-  
-  st_write(st_transform(all_eau_polygones_parking, 2154),
-           nom_gpkg,
-           layer = "all_eau_polygones_parking")
-  
-  st_write(st_transform(cours_eau_parking, 2154),
-           nom_gpkg,
-           layer = "cours_eau_parking")
-  
-  st_write(st_transform(plan_eau_parking, 2154),
-           nom_gpkg,
-           layer = "plan_eau_parking")
-  
-  st_write(st_transform(detail_eau_parking, 2154),
-           nom_gpkg,
-           layer = "detail_eau_parking")
 }
 
 
