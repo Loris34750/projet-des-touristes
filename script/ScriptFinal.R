@@ -101,8 +101,7 @@ buffer.diff.routes <- function(sf) {
 
 # Fonction permettant l'enregistrement dans un géopackage
 sauvegarde.gpkg <- function(nom_gpkg) {
-  # Liste des objets sf et leurs noms
-  sf_layers <- list(
+  sf_layers <- list(  # liste des sf et leur nom de couche
     surface_foret = "surface_foret",
     groupe_parking = "groupe_parking",
     grde_pression_parking_sf = "grde_pression_parking_sf",
@@ -128,7 +127,8 @@ sauvegarde.gpkg <- function(nom_gpkg) {
   )
 
   for (sf_name in names(sf_layers)) {
-    obj <- tryCatch(get(sf_name), error = function(e) NULL)  # Récupère l'objet ou retourne NULL si inexistant
+    obj <- tryCatch(get(sf_name), error = function(e) NULL)  # récupère l'objet
+    # et retourne NULL si inexistant
     if (!is.null(obj) && !is_empty_sf(obj)) {
       st_write(st_transform(obj, 2154), 
                nom_gpkg, 
@@ -136,6 +136,7 @@ sauvegarde.gpkg <- function(nom_gpkg) {
     }
   }
 }
+
 
 # Partie 1 : Identification de la forêt ----
 
