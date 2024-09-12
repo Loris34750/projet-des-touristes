@@ -186,6 +186,11 @@ buffer.route.taille <- function(sf, y, x){
   } 
 }
 
+# Fonction pour vérifier que le sf est vide
+is_empty_sf <- function(sf) {
+  return(nrow(sf) == 0)
+}
+
 # Fonction pour visualisation d'un buffer de distance x mètres pour une route
 # d'importance y et attribution d'une couleur
 buffer.taille.couleur <- function(sf, y, x, color){
