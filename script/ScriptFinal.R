@@ -326,6 +326,7 @@ chemin_freq <- st_intersection(chemin_foret["geometry"],
                                pression_gp_parking$ptit_pression["geometry"])
 
 # Visualisation des chemins les plus fréquentés
+# Message d'erreur peut apparaître lors de la visualisation si 0 chemin
 qtm(chemin_freq)
 
 # Comparaison avec les données openstreetmap
@@ -346,6 +347,7 @@ chemin_osm_freq <- st_intersection(chemin_osm_foret["geometry"],
                                    pression_gp_parking$ptit_pression["geometry"]) 
 
 # Visualisation des chemins osm les plus fréquentés
+# Message d'erreur peut apparaître lors de la visualisation si 0 chemin
 qtm(chemin_osm_freq)
 
 
@@ -489,6 +491,7 @@ detail_eau_parking <- st_intersection(detail_eau_foret["geometry"],
                                       pression_gp_parking$ptit_pression["geometry"])
 
 # Visualisation des éléments "eau" de l'IGN à moins d'1km des parking
+# Message d'erreur peut apparaître lors de la visualisation si 0 points d'eau
 qtm(cours_eau_parking)
 qtm(plan_eau_parking)
 qtm(detail_eau_parking)
