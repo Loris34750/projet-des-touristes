@@ -330,7 +330,8 @@ qtm(chemin_osm_freq)
 
 # Visualisation des points d'eau 
 
-  Dans la même logique que pour les sentiers que l'on trouve en forêt, les points d'eau comme les rivières et les lacs ont été relevés afin de permettre au gestionnaire d'identifier les zones éventuelles de passage de visiteurs. En effet, il a été considéré que la population se plaisait à marcher autour de ces espaces spécifiques pour apprécier son côté paisible. Ces zones délimitées pourront permettre aux forestiers de réfléchir à l'installation de sentiers plus ou moins larges pour accueillir le public ou non.  
+  Dans la même logique que pour les sentiers que l'on trouve en forêt, les points d'eau comme les rivières et les lacs ont été relevés afin de permettre au gestionnaire d'identifier les zones éventuelles de passage de visiteurs. En effet, il a été considéré que la population se plaisait à marcher autour de ces espaces spécifiques pour apprécier son côté paisible. Ces zones délimitées pourront permettre aux forestiers de réfléchir à l'installation de sentiers plus ou moins larges pour accueillir le public ou non.
+  Les données des éléments hydrologiques ont également été extraits de l'IGN afin de les comparer avec les données d'openstreetmap.
   
 ```{r visualisation point d'eau}
 # Récupération des données d'openstreetmap
@@ -384,6 +385,37 @@ all_eau_polygones_parking <- st_intersection(all_eau_polygones_foret["geometry"]
 qtm(all_eau_points_parking)
 qtm(all_eau_lignes_parking)
 qtm(all_eau_polygones_parking)
+
+
+# Comparaison avec les données de l'IGN 
+cours_eau <- get_wfs(surface_foret,
+                     "BDTOPO_V3:cours_d_eau",
+                     spatial_filter = "intersects") 
+plan_eau <- get_wfs(surface_foret,
+                    "BDTOPO_V3:plan_d_eau",
+                    spatial_filter = "intersects") 
+detail_eau <- get_wfs(surface_foret,
+                      "BDTOPO_V3:detail_hydrographique",
+                      spatial_filter = "intersects")
+
+cours_eau_foret <- st_intersection(cours_eau["geometry"],
+                                   surface_foret["geometry"])
+plan_eau_foret <- st_intersection(plan_eau["geometry"],
+                                  surface_foret["geometry"])
+detail_eau_foret <- st_intersection(detail_eau["geometry"],
+                                    surface_foret["geometry"])
+
+cours_eau_parking <- st_intersection(cours_eau_foret["geometry"],
+                                     pression_gp_parking$ptit_pression["geometry"])
+plan_eau_parking <- st_intersection(plan_eau_foret["geometry"],
+                                    pression_gp_parking$ptit_pression["geometry"])
+detail_eau_parking <- st_intersection(detail_eau_foret["geometry"],
+                                      pression_gp_parking$ptit_pression["geometry"])
+
+# Visualisation des éléments "eau" de l'IGN à moins d'1km des parking
+qtm(cours_eau_parking)
+qtm(plan_eau_parking)
+qtm(detail_eau_parking)
 ```
 
 # Passage sur le SIG 
@@ -393,81 +425,93 @@ qtm(all_eau_polygones_parking)
 ```{r Passage SIG}
 # Fonction permettant l'enregistrement dans un géopackage des couches d'intérêt
 sauvegarde.gpkg <- function(nom_gpkg){
-  st_write(surface_foret, 
+  st_write(st_transform(surface_foret, 2154), 
            nom_gpkg,
            layer = "surface_foret")
   
-  st_write(groupe_parking, 
+  st_write(st_transform(groupe_parking, 2154), 
            nom_gpkg,
            layer = "groupe_parking")
   
-  st_write(grde_pression_parking_sf, 
+  st_write(st_transform(grde_pression_parking_sf,2154), 
            nom_gpkg,
            layer = "grde_pression_parking_sf")
   
-  st_write(moy_pression_parking_sf, 
+  st_write(st_transform(moy_pression_parking_sf, 2154),
            nom_gpkg,
            layer = "moy_pression_parking_sf")
   
-  st_write(ptit_pression_parking_sf, 
+  st_write(st_transform(ptit_pression_parking_sf, 2154), 
            nom_gpkg,
            layer = "ptit_pression_parking_sf")
   
-  st_write(chemin_foret, 
+  st_write(st_transform(chemin_foret, 2154),
            nom_gpkg,
            layer = "chemin_foret")
   
-  st_write(chemin_freq, 
+  st_write(st_transform(chemin_freq, 2154),
            nom_gpkg,
            layer = "chemin_freq")
   
-  st_write(chemin_osm_foret, 
+  st_write(st_transform(chemin_osm_foret, 2154),
            nom_gpkg,
            layer = "chemin_osm_foret")
   
-  st_write(chemin_osm_freq, 
+  st_write(st_transform(chemin_osm_freq, 2154),
            nom_gpkg,
            layer = "chemin_osm_freq")
   
-  st_write(iso_30, 
+  st_write(st_transform(iso_30, 2154),
            nom_gpkg,
            layer = "iso_30")
   
-  st_write(commune_5000, 
+  st_write(st_transform(commune_5000, 2154),
            nom_gpkg,
            layer = "commune_5000")
   
-  st_write(routes_foret, 
+  st_write(st_transform(route_foret, 2154),
            nom_gpkg,
-           layer = "routes_foret")
+           layer = "route_foret")
   
-  st_write(route_imp1, 
+  st_write(st_transform(route_imp1, 2154),
            nom_gpkg,
-           layer = "routes_imp1")
+           layer = "route_imp1")
   
-  st_write(route_imp2, 
+  st_write(st_transform(route_imp2, 2154),
            nom_gpkg,
-           layer = "routes_imp2")
+           layer = "route_imp2")
   
-  st_write(route_imp3, 
+  st_write(st_transform(route_imp3, 2154),
            nom_gpkg,
-           layer = "routes_imp3")
+           layer = "route_imp3")
   
-  st_write(route_imp4, 
+  st_write(st_transform(route_imp4, 2154),
            nom_gpkg,
-           layer = "routes_imp4")
+           layer = "route_imp4")
   
-  st_write(route_imp5, 
+  st_write(st_transform(route_imp5, 2154),
            nom_gpkg,
-           layer = "routes_imp5")
+           layer = "route_imp5")
   
-  st_write(all_eau_lignes_parking, 
+  st_write(st_transform(all_eau_lignes_parking, 2154),
            nom_gpkg,
            layer = "all_eau_lignes_parking")
   
-  st_write(all_eau_polygones_parking, 
+  st_write(st_transform(all_eau_polygones_parking, 2154),
            nom_gpkg,
            layer = "all_eau_polygones_parking")
+  
+  st_write(st_transform(cours_eau_parking, 2154),
+           nom_gpkg,
+           layer = "cours_eau_parking")
+  
+  st_write(st_transform(plan_eau_parking, 2154),
+           nom_gpkg,
+           layer = "plan_eau_parking")
+  
+  st_write(st_transform(detail_eau_parking, 2154),
+           nom_gpkg,
+           layer = "detail_eau_parking")
 }
 
 # Chemin d'accès où sera enregistré le gpkg

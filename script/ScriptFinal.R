@@ -188,7 +188,6 @@ sauvegarde.gpkg <- function(nom_gpkg){
   st_write(st_transform(detail_eau_parking, 2154),
            nom_gpkg,
            layer = "detail_eau_parking")
-  
 }
 
 
@@ -437,7 +436,6 @@ qtm(all_eau_lignes_parking)
 qtm(all_eau_polygones_parking)
 
 # Comparaison avec les données de l'IGN 
-
 cours_eau <- get_wfs(surface_foret,
                      "BDTOPO_V3:cours_d_eau",
                      spatial_filter = "intersects") 
@@ -462,9 +460,11 @@ plan_eau_parking <- st_intersection(plan_eau_foret["geometry"],
 detail_eau_parking <- st_intersection(detail_eau_foret["geometry"],
                                       pression_gp_parking$ptit_pression["geometry"])
 
+# Visualisation des éléments "eau" de l'IGN à moins d'1km des parking
 qtm(cours_eau_parking)
 qtm(plan_eau_parking)
 qtm(detail_eau_parking)
+
 
 # Partie 7 : Sauvegarde des données créées dans un géopackage ----
 
