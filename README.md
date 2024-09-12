@@ -17,23 +17,23 @@ Partie 1 : Choix de la forêt par le gestionnaire.
 
 Partie 2 : Identification des villes de plus de 5000 habitants à proximité de la forêt, et classification de ces villes. 
 
-[Contribution guidelines for this project](Resultats/Cartes/Carte_communes_periph.png)
+![Carte_communes_periph](https://github.com/user-attachments/assets/65b0684a-528c-4b4c-bbf9-28f51c821a57)
 
 Partie 3 : Identification des infrastructures à proximité et à l'intérieur de la forêt. 
 
-[Contribution guidelines for this project](Resultats/Cartes/Carte_infrastructures_routes.png)
+![Carte_infrastructures_routes](https://github.com/user-attachments/assets/75c4157a-9c7b-434f-9913-fc22b3626ca7)
 
 Partie 4 : Pression du grand public autour des parkings, grâce à des buffers. 
 
-[Contribution guidelines for this project](Resultats/Cartes/Carte_pression_parking.png)
+![Carte_pression_parking](https://github.com/user-attachments/assets/2fce9bd4-2d36-47c0-a8c2-cd0eb3a8d84b)
 
 Partie 5 et 6 : Visualisation des sentiers et des points d'eau dans la forêt. 
 
 Données de l'IGN:
-[Contribution guidelines for this project](Resultats/Cartes/Carte_des_chemins_points_eau.png)
+![Carte_des_chemins_points_eau](https://github.com/user-attachments/assets/3c8884c3-0e96-42c4-82c2-14c3997c993b)
 
 Comparaison avec les données disponibles sur OpenStreetMap.
-[Contribution guidelines for this project](Resultats/Cartes/Carte_des_chemins_points_eau_OSM.png)
+![Carte_des_chemins_points_eau_OSM](https://github.com/user-attachments/assets/02ba1e8c-66b4-443b-bdab-eeafaab7ac29)
 
 Partie 7 : Génération d'un fichier .gpkg pour obtenir une carte sur Qgis. 
 
