@@ -2,7 +2,9 @@
 title: "Projet R"
 author: "Tifaine CATTANEO, Loris GONZALEZ, Ella Pidoux, Marion VERGNOL"
 date: "2024-09-10"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE, warning =FALSE}
